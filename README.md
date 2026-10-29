@@ -1,8 +1,8 @@
-# Brochure — print manga and books as folded booklets
+# MangaForge 2 — print manga and books as folded booklets
 
 **English** · [Русский](README.ru.md)
 
-A free, offline tool for printing manga, comics and books at home.
+The second version of MangaForge: a free, offline tool for printing manga, comics and books at home.
 Load a PDF, a CBZ or a pile of chapter folders and get a PDF for any ordinary printer.
 Fold the printed sheets in half into signatures, then sew or glue the signatures into a real book.
 
