@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Брошюра — печать книг</title>
+<link rel="stylesheet" href="style.css">
+<script src="lib/pdf.min.js"></script>
+<!-- Воркер подключён как обычный скрипт: так pdf.js работает и при открытии файла с диска -->
+<script src="lib/pdf.worker.min.js"></script>
+<script src="lib/pdf-lib.min.js"></script>
+<script src="lib/jszip.min.js"></script>
+<script src="core.js"></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 7 L4 4 V25 L16 28 Z" class="b1"/><path d="M16 7 L28 4 V25 L16 28 Z" class="b2"/><path d="M16 7 V28" class="b3"/></svg>
+    <div>
+      <h1>Брошюра</h1>
+      <p>Печать книг и манги тетрадями</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="btn" id="btnOpen">Открыть PDF</button>
+    <select id="theme" class="theme-sel" title="Оформление" aria-label="Оформление"></select>
+    <button class="btn primary" id="btnSave" disabled>Скачать PDF для печати</button>
+  </div>
+  <input type="file" id="fileInput" accept="application/pdf,.pdf,.cbz,.zip" multiple hidden>
+  <input type="file" id="folderInput" webkitdirectory multiple hidden>
+</header>
+
+<div class="layout">
+  <aside class="panel" id="panel">
+
+    <details open class="sec">
+      <summary>Файлы</summary>
+      <ul class="files" id="fileList"></ul>
+      <div class="grid2 btns">
+        <button class="btn small" id="btnAdd">+ PDF / CBZ</button>
+        <button class="btn small" id="btnAddFolder">+ Папка с главами</button>
+      </div>
+      <button class="btn small wide" id="btnSortFiles" hidden>↕ Расставить по томам и главам</button>
+      <p class="hint">Главы сами встают по порядку: том, потом глава (Vol.1 Ch.2 → Ch.10 → Ch.10.5 → Vol.2 Ch.11). Подходит для папок и CBZ из FMD2 и других качалок. Стрелками ↑↓ можно поправить вручную. DJVU сначала переведите в PDF.</p>
+    </details>
+
+    <details open class="sec">
+      <summary>Формат книги</summary>
+      <div class="modes">
+        <label class="mode">
+          <input type="radio" name="mode" value="booklet" data-k="mode">
+          <span class="mode-ico"><svg viewBox="0 0 48 32"><rect x="3" y="5" width="42" height="24" rx="2"/><path d="M24 5v24" class="dash"/><text x="13" y="21">16</text><text x="31" y="21">1</text></svg></span>
+          <span class="mode-txt"><b>Обычная книга</b><small>2 страницы на стороне листа. Лист сгибается пополам.</small><small class="size" data-size="booklet"></small></span>
+        </label>
+        <label class="mode">
+          <input type="radio" name="mode" value="booklet4" data-k="mode">
+          <span class="mode-ico"><svg viewBox="0 0 48 32"><rect x="10" y="1" width="28" height="30" rx="2"/><path d="M24 1v30" class="dash"/><path d="M6 16h36" class="cut"/><text x="13" y="12">8</text><text x="27" y="12">1</text><text x="12" y="27">16</text><text x="27" y="27">9</text></svg></span>
+          <span class="mode-txt"><b>Маленькая книга</b><small>4 страницы на стороне. Лист режется пополам — сразу 2 тетради.</small><small class="size" data-size="booklet4"></small></span>
+        </label>
+      </div>
+    </details>
+
+    <details open class="sec">
+      <summary>Обложка</summary>
+      <div class="cover-pick">
+        <div class="cthumb" id="thumbFront"></div>
+        <div class="cfields">
+          <span class="lbl">Передняя — стр.</span>
+          <div class="crow">
+            <input type="number" min="0" id="coverFront" placeholder="нет">
+            <button class="chip" data-cv="front-first">1-я</button>
+            <button class="chip" data-cv="front-none">нет</button>
+          </div>
+        </div>
+      </div>
+      <div class="cover-pick">
+        <div class="cthumb" id="thumbBack"></div>
+        <div class="cfields">
+          <span class="lbl">Задняя — стр.</span>
+          <div class="crow">
+            <input type="number" min="0" id="coverBack" placeholder="нет">
+            <button class="chip" data-cv="back-last">последняя</button>
+            <button class="chip" data-cv="back-none">нет</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <span class="lbl">Что сделать с обложкой</span>
+        <div class="seg seg3">
+          <label><input type="radio" name="coverMode" value="sheet" data-k="coverMode"><span>Отдельный лист по размеру книги</span></label>
+          <label><input type="radio" name="coverMode" value="inside" data-k="coverMode"><span>Как обычные страницы</span></label>
+          <label><input type="radio" name="coverMode" value="skip" data-k="coverMode"><span>Не печатать</span></label>
+        </div>
+        <span class="hint" id="coverInfo"></span>
+      </div>
+      <div data-show-cover>
+        <div class="grid2">
+          <label class="field"><span class="sub">Толщина бумаги блока, мм</span><input type="number" min="0" max="0.5" step="0.01" data-k="paperThick"></label>
+          <label class="field"><span class="sub">Бумага обложки</span>
+            <select data-k="coverPaper"><option value="auto">Авто</option><option value="A4">A4</option><option value="A3">A3</option></select>
+          </label>
+        </div>
+      </div>
+      <p class="hint">Обложку с именем cover, обложка, 0000 программа находит сама. Если обложка — одна широкая картинка (зад + корешок + перед), укажите её как переднюю.</p>
+    </details>
+
+    <details open class="sec">
+      <summary>Книга</summary>
+      <div class="field">
+        <span class="lbl">Бумага для печати</span>
+        <select data-k="paper">
+          <option value="A4">A4</option>
+          <option value="A3">A3</option>
+          <option value="A5">A5</option>
+          <option value="Letter">Letter</option>
+          <option value="Legal">Legal</option>
+        </select>
+        <span class="hint" id="finishedSize"></span>
+      </div>
+
+      <div class="field">
+        <span class="lbl">Как читается</span>
+        <div class="seg">
+          <label><input type="radio" name="rtl" value="false" data-k="rtl"><span>Слева направо</span></label>
+          <label><input type="radio" name="rtl" value="true" data-k="rtl"><span>Справа налево (манга)</span></label>
+        </div>
+      </div>
+
+      <div class="field" data-show="booklet">
+        <span class="lbl">Листов в одной тетради <output data-out="sheetsPerSig"></output></span>
+        <input type="range" min="1" max="16" step="1" data-k="sheetsPerSig">
+        <div class="chips">
+          <button class="chip" data-set="sheetsPerSig" data-v="4">4</button>
+          <button class="chip" data-set="sheetsPerSig" data-v="6">6</button>
+          <button class="chip" data-set="sheetsPerSig" data-v="8">8</button>
+          <button class="chip" data-set="sheetsPerSig" data-v="10">10</button>
+        </div>
+        <span class="hint" id="sigHint"></span>
+        <label class="check"><input type="checkbox" data-k="oneSig"> Вся книга одной тетрадью</label>
+        <label class="check"><input type="checkbox" data-k="balance"> Ровнять тетради (меньше пустых страниц)</label>
+      </div>
+
+      <div class="field">
+        <span class="lbl">Какие страницы</span>
+        <input type="text" data-k="range" placeholder="все (например: 1-30, 45, 50-)">
+      </div>
+      <div class="field">
+        <span class="lbl">Убрать страницы</span>
+        <input type="text" data-k="exclude" placeholder="например страницы переводчиков: 2, 31">
+        <span class="err" id="rangeErr"></span>
+      </div>
+      <label class="check"><input type="checkbox" data-k="splitSpreads"> Развороты (широкие картинки) разрезать на 2 страницы и поставить друг напротив друга</label>
+
+      <div class="grid2">
+        <div class="field">
+          <span class="lbl">Пустых в начале</span>
+          <input type="number" min="0" max="20" step="1" data-k="leadingBlanks">
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" data-k="keepLastAsBack"> Последняя страница — задняя обложка</label>
+    </details>
+
+    <details class="sec">
+      <summary>Поля и размер</summary>
+      <span class="lbl">Поля, мм</span>
+      <div class="grid2">
+        <label class="field"><span class="sub">Сверху</span><input type="number" min="0" max="50" step="0.5" data-k="marginTop"></label>
+        <label class="field"><span class="sub">Снизу</span><input type="number" min="0" max="50" step="0.5" data-k="marginBottom"></label>
+        <label class="field"><span class="sub">Снаружи</span><input type="number" min="0" max="50" step="0.5" data-k="marginOuter"></label>
+        <label class="field"><span class="sub">У корешка</span><input type="number" min="0" max="50" step="0.5" data-k="marginInner"></label>
+      </div>
+      <div class="field">
+        <span class="lbl">Масштаб <output data-out="scale" data-unit="%"></output></span>
+        <input type="range" min="50" max="150" step="1" data-k="scale">
+      </div>
+      <div class="grid2">
+        <label class="field"><span class="sub">Сдвиг к краю, мм</span><input type="number" min="-30" max="30" step="0.5" data-k="shiftX"></label>
+        <label class="field"><span class="sub">Сдвиг вверх, мм</span><input type="number" min="-30" max="30" step="0.5" data-k="shiftY"></label>
+      </div>
+      <div class="field" data-show="booklet">
+        <span class="lbl">Толщина бумаги <output data-out="creep" data-unit=" мм"></output></span>
+        <input type="range" min="0" max="0.5" step="0.05" data-k="creep">
+        <span class="hint">Внутренние листы тетради при сгибе выступают. Этот сдвиг подтягивает их страницы к корешку. Для обычной бумаги 0–0,1.</span>
+      </div>
+    </details>
+
+    <details class="sec">
+      <summary>Обрезать поля сканов</summary>
+      <p class="hint">Срезает белые или серые поля по краям каждой страницы, чтобы картинка стала крупнее.</p>
+      <button class="btn small wide" id="btnAutoCrop">✨ Найти поля автоматически</button>
+      <div class="field"><span class="lbl">Сверху <output data-out="cropT" data-unit="%"></output></span><input type="range" min="0" max="25" step="0.5" data-k="cropT"></div>
+      <div class="field"><span class="lbl">Снизу <output data-out="cropB" data-unit="%"></output></span><input type="range" min="0" max="25" step="0.5" data-k="cropB"></div>
+      <div class="field"><span class="lbl">Слева <output data-out="cropL" data-unit="%"></output></span><input type="range" min="0" max="25" step="0.5" data-k="cropL"></div>
+      <div class="field"><span class="lbl">Справа <output data-out="cropR" data-unit="%"></output></span><input type="range" min="0" max="25" step="0.5" data-k="cropR"></div>
+      <button class="btn small" id="btnCropReset">Не обрезать</button>
+    </details>
+
+    <details open class="sec">
+      <summary>Печать</summary>
+      <div class="field">
+        <span class="lbl">Имя файла</span>
+        <input type="text" id="title" placeholder="подберётся по файлам">
+      </div>
+      <div class="field">
+        <span class="lbl">Принтер</span>
+        <div class="seg">
+          <label><input type="radio" name="duplex" value="auto" data-k="duplex"><span>Печатает с двух сторон</span></label>
+          <label><input type="radio" name="duplex" value="manual" data-k="duplex"><span>Только с одной</span></label>
+        </div>
+        <span class="hint" data-show-duplex="manual">Получится два файла: сначала печатаете лицевые стороны, потом переворачиваете стопку и печатаете обороты.</span>
+        <label class="check" data-show-duplex="manual"><input type="checkbox" data-k="reverseBacks"> Обороты в обратном порядке</label>
+      </div>
+      <label class="check"><input type="checkbox" data-k="marks"> Метки сгиба, разреза и номера листов</label>
+      <label class="check"><input type="checkbox" data-k="pageNumbers"> Печатать номера страниц</label>
+      <div class="field" data-show-num>
+        <span class="lbl">Размер номера <output data-out="pageNumberSize" data-unit=" pt"></output></span>
+        <input type="range" min="6" max="18" step="1" data-k="pageNumberSize">
+      </div>
+    </details>
+
+    <button class="btn small ghost wide" id="btnReset">Сбросить все настройки</button>
+  </aside>
+
+  <main class="main" id="view">
+    <section class="empty" id="empty">
+      <div class="drop" id="drop">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 12 L10 7 V48 L32 54 Z"/><path d="M32 12 L54 7 V48 L32 54 Z"/><path d="M32 12V54"/></svg>
+        <h2>Перетащите PDF, CBZ или папки с главами сюда</h2>
+        <p>Книгу, мангу, конспект. Файлы не уходят с компьютера.</p>
+        <div class="drop-actions">
+          <button class="btn primary" id="btnPick">Выбрать PDF</button>
+          <button class="btn primary" id="btnPickFolder">Выбрать папку с главами</button>
+          <button class="btn" id="btnDemo">Посмотреть на примере</button>
+        </div>
+      </div>
+      <ol class="how">
+        <li>
+          <svg viewBox="0 0 120 70"><rect x="10" y="12" width="100" height="50" rx="3" class="paper"/><path d="M60 12v50" class="dash"/><text x="35" y="44">8</text><text x="85" y="44">1</text></svg>
+          <b>Страницы раскладываются по листам</b>
+          <span>На один лист A4 с двух сторон помещается 4 страницы книги.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 120 70"><path d="M100 10 L20 35 L100 60" class="l1"/><path d="M100 18 L26 35 L100 52" class="l2"/><path d="M100 26 L32 35 L100 44" class="l3"/></svg>
+          <b>Листы складываются «бабочкой»</b>
+          <span>Стопку листов сгибают пополам, получается тетрадь со страницами по порядку.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 120 70"><rect x="22" y="14" width="20" height="44" rx="2" class="t1"/><rect x="44" y="14" width="20" height="44" rx="2" class="t2"/><rect x="66" y="14" width="20" height="44" rx="2" class="t3"/><path d="M18 62 H90" class="glue"/></svg>
+          <b>Тетради собираются в книгу</b>
+          <span>Тетради кладут по порядку и сшивают или склеивают корешок.</span>
+        </li>
+      </ol>
+    </section>
+
+    <section id="work" hidden>
+      <div class="summary" id="summary"></div>
+      <div class="tabs-bar">
+        <div class="tabs" role="tablist">
+          <button role="tab" data-tab="viewer">Пролистать листы</button>
+          <button role="tab" data-tab="sheets">Все листы</button>
+          <button role="tab" data-tab="build">Как собрать</button>
+          <button role="tab" data-tab="book">Готовая книга</button>
+        </div>
+        <label class="zoom" id="zoomBox" title="Размер предпросмотра">
+          <span>−</span><input type="range" min="220" max="900" step="10" id="zoom"><span>+</span>
+        </label>
+      </div>
+      <div id="tabContent"></div>
+    </section>
+  </main>
+</div>
+
+<div class="dropveil" id="dropveil"><div>Отпустите, чтобы открыть PDF</div></div>
+<div class="busy" id="busy" hidden>
+  <div class="busy-box">
+    <div class="busy-text" id="busyText" role="status">Работаю…</div>
+    <div class="bar"><div id="busyBar"></div></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>

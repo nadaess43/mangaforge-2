@@ -1,0 +1,17 @@
+# Белый список: в репозиторий попадает только сама программа.
+# Заметки для агента (ОПИСАНИЕ.md) и всё прочее — игнорируется.
+/*
+!/.gitignore
+!/index.html
+!/app.js
+!/core.js
+!/style.css
+!/README.md
+!/LICENSE
+!/lib/
+!/docs/
+
+# Мусор системы и редакторов
+Thumbs.db
+desktop.ini
+.DS_Store

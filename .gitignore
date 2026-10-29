@@ -1,0 +1,22 @@
+# Белый список: в репозиторий попадает только сама программа (папка booklet).
+# Всё остальное — старое приложение mangaforge, манга, заметки для агента — игнорируется.
+/*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/booklet/
+
+/booklet/*
+!/booklet/index.html
+!/booklet/app.js
+!/booklet/core.js
+!/booklet/style.css
+!/booklet/README.md
+!/booklet/LICENSE
+!/booklet/lib/
+!/booklet/docs/
+
+# Мусор системы и редакторов
+Thumbs.db
+desktop.ini
+.DS_Store
