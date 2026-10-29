@@ -1,87 +1,89 @@
-# Брошюра — печать манги и книг тетрадями
+# Brochure — print manga and books as folded booklets
 
-Бесплатное офлайн-приложение для тех, кто печатает мангу, комиксы и книги дома.
-Загружаете PDF, CBZ или папки с главами, а получаете PDF для обычного принтера.
-Листы из него складываются пополам «бабочкой» в тетради, а тетради сшиваются или склеиваются в настоящую книгу.
+**English** · [Русский](README.ru.md)
 
-Ничего устанавливать не нужно: это одна HTML-страница, которая работает прямо в браузере без интернета.
-Файлы никуда не отправляются, вся обработка идёт на вашем компьютере.
+A free, offline tool for printing manga, comics and books at home.
+Load a PDF, a CBZ or a pile of chapter folders and get a PDF for any ordinary printer.
+Fold the printed sheets in half into signatures, then sew or glue the signatures into a real book.
 
-> *English:* an offline, in-browser booklet imposition tool for printing manga and books at home as folded, sewn or glued signatures. Open `booklet/index.html` in Chrome or Edge. The UI is in Russian.
+Nothing to install: it is a single HTML page that runs in your browser with no internet connection.
+Your files never leave your computer.
 
-## Возможности
+> The app's interface is in Russian. The UI labels below are quoted in Russian with a translation.
 
-- **Любые источники.** PDF, CBZ/ZIP, папка с картинками или сразу много папок глав, например скачанных через FMD2.
-  Главы сортируются по тому и номеру, включая дробные вроде «Гл. 10.5».
-- **Два формата книги.**
-  - *Обычная книга:* 2 страницы на сторону листа, A4 → книга A5.
-  - *Маленькая книга:* 4 страницы на сторону, лист A4 режется пополам на две тетради, получается книга A6.
-- **Манга справа налево.** Порядок страниц и корешок справа, как в оригинале.
-- **Развороты.** Широкие страницы режутся на две половинки, которые всегда попадают на соседние страницы книги.
-- **Обложка так, как её выкладывают сканлейт-команды.** Передняя и задняя обложки находятся автоматически (cover, обложка, 000…), их можно выбрать вручную. Обложку можно:
-  - не печатать;
-  - напечатать как обычные страницы;
-  - вывести отдельным листом точно по размеру книги. Толщина корешка считается по числу листов и толщине бумаги, есть метки обреза.
-- **Ровные тетради.** Число листов в тетради настраивается, тетради одинаковые. Компенсация «выползания» внутренних листов.
-- **Подготовка сканов.** Поля, масштаб, сдвиг, обрезка белых полей вручную или автоматически, номера страниц по желанию.
-- **Печать на любом принтере.** Автоматическая двусторонняя печать или ручная: два файла, «лицевые» и «обороты».
-- **Наглядный предпросмотр.**
-  - Каждый лист можно перевернуть на оборот.
-  - Видно, где лист лежит в тетради.
-  - Есть пошаговая инструкция сборки с картинками.
-  - Готовую книгу можно пролистать до печати.
-- **20 цветовых тем**, светлая и тёмная.
+## Features
 
-## Быстрый старт
+- **Any source.** PDF, CBZ/ZIP, a folder of images, or many chapter folders at once (for example, downloaded with FMD2).
+  Chapters are sorted by volume and chapter number, including decimal chapters like "Ch. 10.5".
+- **Two book formats.**
+  - *Regular book:* 2 pages per side of the sheet. A4 sheets give an A5 book.
+  - *Small book:* 4 pages per side. Each A4 sheet is cut in half into two signatures, giving an A6 book.
+- **Right-to-left manga.** Page order and the spine on the right, just like the original.
+- **Double-page spreads.** Wide pages are split into two halves that always land on facing pages of the book.
+- **Covers handled the way scanlation groups release them.** Front and back covers are detected automatically from file names (cover, обложка, 000…) and can be picked by hand. The cover can be:
+  - left out;
+  - printed as regular pages;
+  - printed as a separate wrap-around sheet sized exactly to the book. The spine width is calculated from the sheet count and paper thickness, with trim marks.
+- **Even signatures.** Choose the number of sheets per signature, and all signatures come out the same size. Creep compensation for the inner sheets is included.
+- **Scan cleanup.** Margins, scale, offset, manual or automatic trimming of white borders, and optional page numbers.
+- **Works with any printer.** Automatic duplex, or manual duplex with two files: fronts and backs.
+- **Visual preview.**
+  - Flip any sheet over to see its back.
+  - See where each sheet sits in its signature.
+  - Follow step-by-step assembly instructions with pictures.
+  - Page through the finished book before printing.
+- **20 color themes**, light and dark.
 
-1. Скачайте репозиторий (Code → Download ZIP) и распакуйте.
-2. Откройте `booklet/index.html` в Chrome или Edge.
-3. Нажмите «Открыть PDF» или добавьте CBZ или папку с главами.
-4. Выберите формат книги и направление чтения, проверьте обложку.
-5. Посмотрите листы во вкладке «Пролистать листы» и нажмите «Сохранить».
-6. Напечатайте PDF с двух сторон в масштабе 100% («Фактический размер»).
-   В обычной книге переворот по короткому краю, в маленькой — по длинному.
-7. Соберите книгу по вкладке «Как собрать».
+## Quick start
 
-Совет: перед большой печатью напечатайте 1–2 листа и проверьте, что оборот совпадает с лицом.
+1. Download the repository (Code → Download ZIP) and unpack it.
+2. Open `booklet/index.html` in Chrome or Edge.
+3. Click «Открыть PDF» (Open PDF) or add a CBZ or a chapter folder.
+4. Choose the book format and reading direction, and check the cover.
+5. Review the sheets in the «Пролистать листы» (Flip through sheets) tab, then click «Сохранить» (Save).
+6. Print the PDF double-sided at 100% scale ("Actual size").
+   Flip on the short edge for a regular book and on the long edge for a small book.
+7. Assemble the book using the «Как собрать» (How to assemble) tab.
 
-## Как собрать книгу
+Tip: before a big print run, print 1–2 sheets and check that the backs line up with the fronts.
+
+## Assembling the book
 
 ```
-печать → (разрезать пополам) → стопка, лист 1 сверху → согнуть пополам → тетради по порядку → сшить / склеить корешок → обложка
+print → (cut in half) → stack, sheet 1 on top → fold in half → signatures in order → sew / glue the spine → cover
 ```
 
-В углу каждого листа стоит метка вида `T1 · L3/6 · A`: тетрадь 1, лист 3 из 6, лицевая сторона.
-Если листы перемешаются, по метке легко найти место каждого.
+Each sheet has a mark in the corner such as `T1 · L3/6 · A`: signature 1, sheet 3 of 6, front side.
+If the sheets get mixed up, the mark tells you where each one belongs.
 
-## Как это работает
+## How it works
 
-Тетрадь из P = 4·S страниц собирается из S листов. Лист *i* (от 0) несёт:
+A signature of P = 4·S pages is made from S sheets. Sheet *i* (counting from 0) carries:
 
-| | Лицо | Оборот |
+| | Front | Back |
 |---|---|---|
-| Слева направо | `P−1−2i`, `2i` | `2i+1`, `P−2−2i` |
-| Справа налево (манга) | `2i`, `P−1−2i` | `P−2−2i`, `2i+1` |
+| Left to right | `P−1−2i`, `2i` | `2i+1`, `P−2−2i` |
+| Right to left (manga) | `2i`, `P−1−2i` | `P−2−2i`, `2i+1` |
 
-После сгиба стопки страницы встают по порядку. В «маленькой книге» две тетради делят один лист A4: одна сверху, другая снизу.
+Once the stack is folded, the pages fall into order. In the small book, two signatures share one A4 sheet: one on the top half, the other on the bottom half.
 
-## Структура
+## Project structure
 
 ```
 booklet/
-  index.html   разметка интерфейса
-  app.js       интерфейс: загрузка, сортировка, обложка, предпросмотр, сохранение
-  core.js      ядро без интерфейса: порядок страниц, раскладка, генерация PDF (работает и в Node.js)
-  style.css    оформление и темы
-  lib/         сторонние библиотеки (локальные копии, интернет не нужен)
+  index.html   interface markup
+  app.js       interface: loading, sorting, covers, preview, saving
+  core.js      UI-free core: page order, imposition, PDF generation (also runs in Node.js)
+  style.css    styles and themes
+  lib/         third-party libraries (local copies, no internet needed)
 ```
 
-## Сторонние библиотеки
+## Third-party libraries
 
-- [pdf-lib](https://github.com/Hopding/pdf-lib) (MIT): создание PDF.
-- [PDF.js](https://github.com/mozilla/pdf.js) (Apache-2.0): чтение и отрисовка PDF.
-- [JSZip](https://github.com/Stuk/jszip) (MIT / GPLv3): чтение CBZ и ZIP.
+- [pdf-lib](https://github.com/Hopding/pdf-lib) (MIT): creating PDFs.
+- [PDF.js](https://github.com/mozilla/pdf.js) (Apache-2.0): reading and rendering PDFs.
+- [JSZip](https://github.com/Stuk/jszip) (MIT / GPLv3): reading CBZ and ZIP.
 
-## Лицензия
+## License
 
-[MIT](LICENSE) — можно свободно использовать, менять и распространять с указанием автора.
+[MIT](LICENSE): free to use, modify and distribute with attribution.
