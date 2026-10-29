@@ -2,7 +2,7 @@
 
 **English** · [Русский](README.ru.md)
 
-The second version of MangaForge: a free, offline tool for printing manga, comics and books at home.
+A free, offline tool for printing manga, comics and books at home.
 Load a PDF, a CBZ or a pile of chapter folders and get a PDF for any ordinary printer.
 Fold the printed sheets in half into signatures, then sew or glue the signatures into a real book.
 
