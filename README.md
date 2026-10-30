@@ -13,6 +13,7 @@ Your files never leave your computer.
 
 ## Features
 
+- **Download by link (desktop version).** Paste a link to a manga page, pick chapters or whole volumes, and they go straight into the book. Runs the site scripts from [FMD2](https://github.com/dazedcat19/FMD2) (600+ sites, including ReadManga, MintManga, SeiManga, MangaChan and MangaLib) on its own engine, so FMD itself is not needed. Sites behind anti-bot protection are not supported.
 - **Any source.** PDF, CBZ/ZIP, a folder of images, or many chapter folders at once (for example, downloaded with FMD2).
   Chapters are sorted by volume and chapter number, including decimal chapters like "Ch. 10.5".
 - **Two book formats.**
@@ -45,6 +46,18 @@ Your files never leave your computer.
    Flip on the short edge for a regular book and on the long edge for a small book.
 7. Assemble the book using the «Как собрать» (How to assemble) tab.
 
+### Desktop version (download by link)
+
+Requires [Node.js](https://nodejs.org) 20 or newer.
+
+```
+cd desktop
+npm install
+npm start
+```
+
+The same app opens as a window, with an extra «⇣ Скачать по ссылке» (Download by link) button in the files panel.
+
 Tip: before a big print run, print 1–2 sheets and check that the backs line up with the fronts.
 
 ## Assembling the book
@@ -76,6 +89,11 @@ booklet/
   core.js      UI-free core: page order, imposition, PDF generation (also runs in Node.js)
   style.css    styles and themes
   lib/         third-party libraries (local copies, no internet needed)
+  downloader.js  download-by-link window (desktop version only)
+desktop/
+  main.js      Electron window and download API
+  engine/      FMD-compatible engine: Lua 5.4 (wasmoon), Xidel-style XPath/JSON queries (fontoxpath), HTTP
+  (site scripts from FMD2 are downloaded from GitHub on first launch)
 ```
 
 ## Third-party libraries
@@ -83,6 +101,8 @@ booklet/
 - [pdf-lib](https://github.com/Hopding/pdf-lib) (MIT): creating PDFs.
 - [PDF.js](https://github.com/mozilla/pdf.js) (Apache-2.0): reading and rendering PDFs.
 - [JSZip](https://github.com/Stuk/jszip) (MIT / GPLv3): reading CBZ and ZIP.
+- [FMD2](https://github.com/dazedcat19/FMD2) (GPL-2.0): site scripts, downloaded by the app from the FMD2 repository at first launch and kept up to date.
+- [Electron](https://www.electronjs.org) (MIT), [wasmoon](https://github.com/ceifa/wasmoon) (MIT), [fontoxpath](https://github.com/FontoXML/fontoxpath) (MIT), [slimdom](https://github.com/bwrrp/slimdom.js) (MIT), [parse5](https://github.com/inikulin/parse5) (MIT), [css-select](https://github.com/fb55/css-select) (BSD-2-Clause): the desktop version and its engine.
 
 ## License
 

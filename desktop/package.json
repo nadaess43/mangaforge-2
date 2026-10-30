@@ -1,0 +1,21 @@
+{
+  "name": "mangaforge2",
+  "version": "0.1.0",
+  "description": "MangaForge 2 — печать манги тетрадями, со встроенным загрузчиком на скриптах FMD",
+  "main": "main.js",
+  "license": "GPL-3.0",
+  "private": true,
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "css-select": "^7.0.0",
+    "fontoxpath": "^3.34.0",
+    "parse5": "^8.0.1",
+    "slimdom": "^4.3.5",
+    "wasmoon": "^1.16.0"
+  },
+  "devDependencies": {
+    "electron": "^45.1.0"
+  }
+}

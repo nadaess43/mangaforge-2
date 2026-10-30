@@ -1378,6 +1378,13 @@
     sel.addEventListener('change', () => { applyTheme(sel.value); store.set('booklet.theme', sel.value); });
   }
 
+  // Для окна скачивания (настольная версия)
+  window.MangaForge = {
+    addInputs,
+    setTitle: (t) => { title = t; $('#title').value = t; },
+    toast,
+  };
+
   function init() {
     initThemes();
     bindControls();

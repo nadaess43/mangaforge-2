@@ -13,6 +13,7 @@
 
 ## Возможности
 
+- **Скачивание по ссылке (настольная версия).** Вставляете ссылку на страницу манги, выбираете главы или целые тома — и они сразу попадают в книгу. Работает на скриптах сайтов из [FMD2](https://github.com/dazedcat19/FMD2) (больше 600 сайтов, среди них ReadManga, MintManga, SeiManga, MangaChan и MangaLib) через собственный движок, сам FMD не нужен. Сайты с защитой от ботов не поддерживаются.
 - **Любые источники.** PDF, CBZ/ZIP, папка с картинками или сразу много папок глав, например скачанных через FMD2.
   Главы сортируются по тому и номеру, включая дробные вроде «Гл. 10.5».
 - **Два формата книги.**
@@ -45,6 +46,18 @@
    В обычной книге переворот по короткому краю, в маленькой — по длинному.
 7. Соберите книгу по вкладке «Как собрать».
 
+### Настольная версия (скачивание по ссылке)
+
+Нужен [Node.js](https://nodejs.org) 20 или новее.
+
+```
+cd desktop
+npm install
+npm start
+```
+
+Откроется та же программа в отдельном окне, а в разделе «Файлы» появится кнопка «⇣ Скачать по ссылке».
+
 Совет: перед большой печатью напечатайте 1–2 листа и проверьте, что оборот совпадает с лицом.
 
 ## Как собрать книгу
@@ -76,6 +89,11 @@ booklet/
   core.js      ядро без интерфейса: порядок страниц, раскладка, генерация PDF (работает и в Node.js)
   style.css    оформление и темы
   lib/         сторонние библиотеки (локальные копии, интернет не нужен)
+  downloader.js  окно «Скачать по ссылке» (только настольная версия)
+desktop/
+  main.js      окно Electron и API загрузчика
+  engine/      движок, совместимый с FMD: Lua 5.4 (wasmoon), запросы XPath/JSON как в Xidel (fontoxpath), HTTP
+  (скрипты сайтов из FMD2 скачиваются с GitHub при первом запуске)
 ```
 
 ## Сторонние библиотеки
@@ -83,6 +101,8 @@ booklet/
 - [pdf-lib](https://github.com/Hopding/pdf-lib) (MIT): создание PDF.
 - [PDF.js](https://github.com/mozilla/pdf.js) (Apache-2.0): чтение и отрисовка PDF.
 - [JSZip](https://github.com/Stuk/jszip) (MIT / GPLv3): чтение CBZ и ZIP.
+- [FMD2](https://github.com/dazedcat19/FMD2) (GPL-2.0): скрипты сайтов, программа скачивает их из репозитория FMD2 при первом запуске и обновляет.
+- [Electron](https://www.electronjs.org) (MIT), [wasmoon](https://github.com/ceifa/wasmoon) (MIT), [fontoxpath](https://github.com/FontoXML/fontoxpath) (MIT), [slimdom](https://github.com/bwrrp/slimdom.js) (MIT), [parse5](https://github.com/inikulin/parse5) (MIT), [css-select](https://github.com/fb55/css-select) (BSD-2-Clause): настольная версия и её движок.
 
 ## Лицензия
 

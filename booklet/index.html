@@ -41,6 +41,7 @@
         <button class="btn small" id="btnAdd">+ PDF / CBZ</button>
         <button class="btn small" id="btnAddFolder">+ Папка с главами</button>
       </div>
+      <button class="btn small wide" id="btnFromUrl" hidden>⇣ Скачать по ссылке</button>
       <button class="btn small wide" id="btnSortFiles" hidden>↕ Расставить по томам и главам</button>
       <p class="hint">Главы сами встают по порядку: том, потом глава (Vol.1 Ch.2 → Ch.10 → Ch.10.5 → Vol.2 Ch.11). Подходит для папок и CBZ из FMD2 и других качалок. Стрелками ↑↓ можно поправить вручную. DJVU сначала переведите в PDF.</p>
     </details>
@@ -231,6 +232,7 @@
         <div class="drop-actions">
           <button class="btn primary" id="btnPick">Выбрать PDF</button>
           <button class="btn primary" id="btnPickFolder">Выбрать папку с главами</button>
+          <button class="btn primary" id="btnFromUrl2" hidden>Скачать по ссылке</button>
           <button class="btn" id="btnDemo">Посмотреть на примере</button>
         </div>
       </div>
@@ -280,6 +282,33 @@
 </div>
 <div class="toast" id="toast" hidden></div>
 
+<dialog class="dl" id="dl">
+  <div class="dl-head">
+    <b>Скачать мангу по ссылке</b>
+    <button class="btn small" id="dlClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="dl-url">
+    <input id="dlUrl" type="url" placeholder="Ссылка на страницу манги" spellcheck="false">
+    <button class="btn primary" id="dlFind">Найти</button>
+  </div>
+  <p class="hint" id="dlHint"></p>
+  <div class="dl-info" id="dlInfo" hidden>
+    <img id="dlCover" alt="">
+    <div><b id="dlTitle"></b><span id="dlMeta"></span></div>
+  </div>
+  <div class="dl-tools" id="dlTools" hidden>
+    <button class="btn small" data-sel="all">Все</button>
+    <button class="btn small" data-sel="none">Ничего</button>
+    <span class="dl-vols" id="dlVols"></span>
+  </div>
+  <div class="dl-list" id="dlList"></div>
+  <div class="dl-foot">
+    <div class="dl-status"><span id="dlStatus"></span><div class="bar" id="dlBarWrap" hidden><div id="dlBar"></div></div></div>
+    <button class="btn primary" id="dlGo" disabled>Скачать</button>
+  </div>
+</dialog>
+
 <script src="app.js"></script>
+<script src="downloader.js"></script>
 </body>
 </html>
