@@ -150,7 +150,8 @@ input[type="text"]:focus, input[type="url"]:focus, input[type="number"]:focus, s
 input[type="range"] { width: 100%; accent-color: var(--accent); }
 
 .seg { display: flex; background: var(--surface-2); border-radius: 8px; padding: 3px; gap: 3px; }
-.seg label { flex: 1; cursor: pointer; }
+/* position: relative — скрытый input остаётся внутри панели; иначе при фокусе браузер прокручивает всю страницу */
+.seg label { flex: 1; cursor: pointer; position: relative; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg span { display: block; text-align: center; padding: 6px 6px; border-radius: 6px; font-size: 12.5px; line-height: 1.25; }
 .seg input:checked + span { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); font-weight: 600; color: var(--accent); }
@@ -164,7 +165,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .mode {
   display: flex; gap: 10px; align-items: center;
   border: 1.5px solid var(--border); border-radius: var(--radius);
-  padding: 8px 10px; cursor: pointer;
+  padding: 8px 10px; cursor: pointer; position: relative;
 }
 .mode input { position: absolute; opacity: 0; pointer-events: none; }
 .mode:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
@@ -537,3 +538,18 @@ h3.block-title { font-size: 15px; margin: 6px 0 10px; }
 .dl-ch input { accent-color: var(--accent); }
 .dl-foot { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
 .dl-status { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--muted); }
+.dl-head-btns { display: flex; gap: 6px; }
+#dlMin { display: none; }
+.dl.running #dlMin { display: inline-flex; }
+.dl-folder { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.dl-folder code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 7px; padding: 5px 8px; color: var(--text); font-size: 12px; }
+.dl-add { margin: 0; white-space: nowrap; }
+.dl-ch .done { color: var(--muted); font-size: 12px; margin-left: auto; }
+.dl-pill {
+  position: fixed; right: 18px; bottom: 18px; z-index: 50; display: flex; gap: 10px; align-items: center;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25); width: min(440px, calc(100vw - 36px));
+}
+.dl-pill-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.dl-pill-text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

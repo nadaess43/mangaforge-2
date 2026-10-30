@@ -285,13 +285,22 @@
 <dialog class="dl" id="dl">
   <div class="dl-head">
     <b>Скачать мангу по ссылке</b>
-    <button class="btn small" id="dlClose" aria-label="Закрыть">✕</button>
+    <span class="dl-head-btns">
+      <button class="btn small" id="dlMin" title="Свернуть: скачивание продолжится">— Свернуть</button>
+      <button class="btn small" id="dlClose" aria-label="Закрыть">✕</button>
+    </span>
   </div>
   <div class="dl-url">
     <input id="dlUrl" type="url" placeholder="Ссылка на страницу манги" spellcheck="false">
     <button class="btn primary" id="dlFind">Найти</button>
   </div>
   <p class="hint" id="dlHint"></p>
+  <div class="dl-folder">
+    <span>Папка:</span>
+    <code id="dlFolder" title="Каждая манга — в своей папке по названию, внутри папки глав"></code>
+    <button class="btn small" id="dlPick">Изменить…</button>
+    <button class="btn small" id="dlOpen">Открыть</button>
+  </div>
   <div class="dl-info" id="dlInfo" hidden>
     <img id="dlCover" alt="">
     <div><b id="dlTitle"></b><span id="dlMeta"></span></div>
@@ -304,9 +313,15 @@
   <div class="dl-list" id="dlList"></div>
   <div class="dl-foot">
     <div class="dl-status"><span id="dlStatus"></span><div class="bar" id="dlBarWrap" hidden><div id="dlBar"></div></div></div>
+    <label class="check dl-add"><input type="checkbox" id="dlAdd" checked><span>Сразу в книгу</span></label>
     <button class="btn primary" id="dlGo" disabled>Скачать</button>
   </div>
 </dialog>
+<div class="dl-pill" id="dlPill" hidden>
+  <div class="dl-pill-text"><span id="dlPillText"></span><div class="bar"><div id="dlPillBar"></div></div></div>
+  <button class="btn small" id="dlPillOpen">Развернуть</button>
+  <button class="btn small" id="dlPillStop">Стоп</button>
+</div>
 
 <script src="app.js"></script>
 <script src="downloader.js"></script>

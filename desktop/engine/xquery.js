@@ -183,12 +183,37 @@ function mapSteps(s) {
   return s.replace(/(?<![\w$?@:./-])([A-Za-z_][\w-]*)(?![\w-])(?!\s*\()(?!\s*::)(?!:)/g, (m, name) => (KEYWORDS.has(name) ? m : '?' + name));
 }
 
+// Сравнение поля JSON как в Xidel: 1 = "1" истинно, поэтому значение становится untypedAtomic
+function looseCompare(s) {
+  return s.replace(/(?<![\w)\]*$.-])((?:\?[A-Za-z_][\w-]*)+)(?=\s*(?:!=|<=|>=|=|<|>)(?!>))/g, '(data($1) ! xs:untypedAtomic(.))');
+}
+
+// Фильтр после шага по JSON (…?*[id="main"]): голые имена внутри — поля объекта, как в Xidel
+function jsonPredicates(s) {
+  let res = '', i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === '[' && /(\?\*|\?[A-Za-z_][\w-]*)\s*$/.test(res)) {
+      let depth = 1, j = i + 1;
+      while (j < s.length && depth) { if (s[j] === '[') depth++; else if (s[j] === ']') depth--; j++; }
+      res += '[' + looseCompare(mapSteps(jsonPredicates(s.slice(i + 1, j - 1)))) + ']';
+      i = j;
+      continue;
+    }
+    res += c; i++;
+  }
+  return res;
+}
+
 const cache = new Map();
 function translate(expr, mapMode = false) {
   const key = (mapMode ? 'M' : 'N') + expr;
   let t = cache.get(key);
   if (t === undefined) {
-    t = wrapCalls(splitCode(expr).map((p) => (p.str !== undefined ? p.str : (mapMode ? mapSteps : (x) => x)(literals(translateCode(p.code))))).join(''));
+    // Строки прячем на время разбора фильтров: в них ничего менять нельзя
+    const strs = [];
+    const code = splitCode(expr).map((p) => (p.str !== undefined ? (strs.push(p.str), '\u0010' + (strs.length - 1) + '\u0010') : (mapMode ? mapSteps : (x) => x)(literals(translateCode(p.code))))).join('');
+    t = wrapCalls(jsonPredicates(code).replace(/\u0010(\d+)\u0010/g, (m, n) => strs[n]));
     cache.set(key, t);
   }
   return t;

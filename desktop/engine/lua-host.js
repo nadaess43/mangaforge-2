@@ -302,7 +302,8 @@ async function getInfo(script, module, url) {
     if (!link || seen.has(link.toLowerCase())) return;
     seen.add(link.toLowerCase());
     const { host, path: p } = splitURL(link);
-    chapters.push({ link: host ? p || link : link, name: (names[i] || '').trim().replace(/\s+/g, ' ') });
+    // Ссылка без хоста всегда с «/» в начале: скрипты склеивают API_URL .. URL
+    chapters.push({ link: host ? p || link : link.replace(/^(?![/?#])/, '/'), name: (names[i] || '').trim().replace(/\s+/g, ' ') });
   });
   return {
     code: Number(code ?? 0),

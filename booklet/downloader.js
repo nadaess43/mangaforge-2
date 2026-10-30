@@ -9,10 +9,11 @@
   const dlg = $('#dl');
   let info = null;      // ответ загрузчика: название, главы
   let url = '';
-  let chapters = [];    // [{link, name, vol, ch, folder, on}]
+  let chapters = [];    // [{link, name, vol, ch, folder, on, saved}]
   let lastClicked = -1;
   let cancel = false;
   let running = false;
+  let minimized = false;
 
   for (const id of ['#btnFromUrl', '#btnFromUrl2']) {
     const b = $(id);
@@ -38,12 +39,36 @@
   });
 
   function open() {
-    dlg.showModal();
-    $('#dlUrl').focus();
-    $('#dlUrl').select();
+    minimized = false;
+    $('#dlPill').hidden = true;
+    if (!dlg.open) dlg.showModal();
+    if (!running) { $('#dlUrl').focus(); $('#dlUrl').select(); }
   }
-  $('#dlClose').addEventListener('click', () => { if (running) cancel = true; else dlg.close(); });
-  dlg.addEventListener('cancel', (e) => { if (running) { e.preventDefault(); cancel = true; } });
+  // Свернуть: окно прячется, скачивание идёт дальше, внизу справа — маленькая панель
+  function minimize() {
+    minimized = true;
+    dlg.close();
+    $('#dlPill').hidden = false;
+  }
+  $('#dlMin').addEventListener('click', minimize);
+  $('#dlClose').addEventListener('click', () => { if (running) minimize(); else dlg.close(); });
+  dlg.addEventListener('cancel', (e) => { if (running) { e.preventDefault(); minimize(); } });
+  $('#dlPillOpen').addEventListener('click', open);
+  $('#dlPillStop').addEventListener('click', () => { cancel = true; $('#dlPillText').textContent = 'Останавливаю…'; });
+
+  // Имя папки для Windows: без запрещённых знаков, точек и пробелов в конце
+  const safe = (s) => String(s).replace(/[\\/:*?"<>|\x00-\x1f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120).replace(/[. ]+$/, '') || 'manga';
+
+  // Папка загрузок: каждая манга — в своей папке по названию, внутри — папки глав
+  const showFolder = (p) => { $('#dlFolder').textContent = p; $('#dlFolder').title = p; };
+  api.folder().then(showFolder);
+  $('#dlPick').addEventListener('click', async () => {
+    const p = await api.pickFolder();
+    if (!p) return;
+    showFolder(p);
+    if (info) await markSaved();
+  });
+  $('#dlOpen').addEventListener('click', () => api.openFolder(info ? safe(info.title) : ''));
 
   $('#dlUrl').addEventListener('keydown', (e) => { if (e.key === 'Enter') find(); });
   $('#dlFind').addEventListener('click', find);
@@ -52,6 +77,10 @@
     $('#dlStatus').textContent = text || '';
     $('#dlBarWrap').hidden = p === undefined;
     if (p !== undefined) $('#dlBar').style.width = Math.round(p * 100) + '%';
+    if (running) {
+      $('#dlPillText').textContent = text || '';
+      $('#dlPillBar').style.width = Math.round((p || 0) * 100) + '%';
+    }
   }
 
   // Том и глава: из названия («Том 2 Глава 7», «Vol.1 Ch.3») или из ссылки (/vol2/7, _v1_ch3)
@@ -63,8 +92,6 @@
     if (ch === null) ch = n(/\/vol\d+\/(\d+(?:\.\d+)?)/i, link) ?? n(/_ch_?(\d+(?:\.\d+)?)/i, link) ?? n(/chapter[-_/]?(\d+(?:\.\d+)?)/i, link);
     return { vol, ch };
   }
-
-  const safe = (s) => String(s).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) || 'manga';
 
   async function find() {
     url = $('#dlUrl').value.trim();
@@ -86,19 +113,29 @@
         const label = k.vol !== null && k.ch !== null ? `Том ${k.vol} Глава ${k.ch}` : k.ch !== null ? `Глава ${k.ch}` : `Глава ${i + 1}`;
         // Папка главы: номер для правильного порядка + название с сайта
         const rest = c.name.replace(/^(?:том|vol\.?)\s*\d+\s*(?:глава|ch\.?)\s*\d+(?:[.,]\d+)?\s*[-–:.]?\s*/i, '');
-        return { ...c, ...k, label, folder: safe(rest && rest !== c.name ? `${label} ${rest}` : label), on: true };
+        return { ...c, ...k, label, folder: safe(rest && rest !== c.name ? `${label} ${rest}` : label), on: true, saved: false };
       });
       $('#dlTitle').textContent = info.title;
       $('#dlMeta').textContent = [info.site, info.authors, `${chapters.length} глав`].filter(Boolean).join(' · ');
       $('#dlInfo').hidden = false;
       loadCover();
+      await markSaved();
       renderList();
-      status('');
+      const n = chapters.filter((c) => c.saved).length;
+      status(n ? `${n} из ${chapters.length} глав уже есть в папке — их не будем качать заново.` : '');
     } catch (e) {
       status(String(e.message || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, ''));
     } finally {
       $('#dlFind').disabled = false;
     }
+  }
+
+  // Какие главы уже лежат в папке — их не качаем повторно
+  async function markSaved() {
+    const root = safe(info.title);
+    const has = await api.hasChapters(chapters.map((c) => `${root}/${c.folder}`));
+    chapters.forEach((c, i) => { c.saved = has[i]; });
+    if ($('#dlList').children.length) renderList();
   }
 
   async function loadCover() {
@@ -122,15 +159,17 @@
     let prevVol;
     chapters.forEach((c, i) => {
       if (hasVols && c.vol !== prevVol) { html += `<div class="dl-vol">${c.vol === null ? 'Без тома' : 'Том ' + c.vol}</div>`; prevVol = c.vol; }
-      html += `<label class="dl-ch"><input type="checkbox" data-i="${i}" ${c.on ? 'checked' : ''}><span>${esc(c.name || c.label)}</span></label>`;
+      html += `<label class="dl-ch"><input type="checkbox" data-i="${i}" ${c.on ? 'checked' : ''}><span>${esc(c.name || c.label)}</span>${c.saved ? '<span class="done">✓ уже скачана</span>' : ''}</label>`;
     });
     $('#dlList').innerHTML = html;
     sync();
   }
 
   function sync() {
+    dlg.classList.toggle('running', running);
+    if (running) { $('#dlGo').disabled = false; $('#dlGo').textContent = 'Остановить'; return; }
     const n = chapters.filter((c) => c.on).length;
-    $('#dlGo').disabled = !n || running;
+    $('#dlGo').disabled = !n;
     $('#dlGo').textContent = n ? `Скачать ${n} ${plural(n, 'главу', 'главы', 'глав')}` : 'Скачать';
     for (const b of document.querySelectorAll('#dlVols [data-vol]')) {
       const v = b.dataset.vol === 'null' ? null : parseFloat(b.dataset.vol);
@@ -143,7 +182,7 @@
   // Галочки: Shift — выделить диапазон
   $('#dlList').addEventListener('click', (e) => {
     const cb = e.target.closest('input[data-i]');
-    if (!cb) return;
+    if (!cb || running) { if (cb) e.preventDefault(); return; }
     const i = +cb.dataset.i;
     if (e.shiftKey && lastClicked >= 0) {
       const [a, b] = [Math.min(i, lastClicked), Math.max(i, lastClicked)];
@@ -154,6 +193,7 @@
     sync();
   });
   $('#dlTools').addEventListener('click', (e) => {
+    if (running) return;
     const s = e.target.closest('[data-sel]');
     const v = e.target.closest('[data-vol]');
     if (s) chapters.forEach((c) => { c.on = s.dataset.sel === 'all'; });
@@ -171,22 +211,35 @@
     const m = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' }[mime];
     return m || ((/\.(jpe?g|png|webp|gif|avif)(?:$|\?)/i.exec(src) || [])[1] || 'jpg').toLowerCase().replace('jpeg', 'jpg');
   };
+  const mimeOf = (name) => ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif' }[name.split('.').pop().toLowerCase()] || 'image/jpeg');
 
-  $('#dlGo').addEventListener('click', download);
+  $('#dlGo').addEventListener('click', () => {
+    if (running) { cancel = true; status('Останавливаю…'); } else download();
+  });
 
   async function download() {
     const list = chapters.filter((c) => c.on);
     if (!list.length) return;
     running = true; cancel = false;
-    $('#dlGo').disabled = true;
     $('#dlFind').disabled = true;
-    $('#dlClose').textContent = 'Стоп';
+    $('#dlPick').disabled = true;
+    sync();
     const root = safe(info.title);
     const items = [];
     const failed = [];
     try {
       for (let ci = 0; ci < list.length && !cancel; ci++) {
         const c = list[ci];
+        const rel = `${root}/${c.folder}`;
+        // Уже скачана — берём с диска
+        if (c.saved) {
+          status(`Глава ${ci + 1} из ${list.length}: беру из папки…`, ci / list.length);
+          const files = await api.readChapter(rel);
+          if (files.length) {
+            for (const f of files) items.push({ file: new File([f.bytes], f.name, { type: mimeOf(f.name) }), path: `${rel}/${f.name}` });
+            continue;
+          }
+        }
         status(`Глава ${ci + 1} из ${list.length}: ищу страницы…`, ci / list.length);
         let pages = [];
         // Сайты иногда отдают обрезанную страницу — пробуем ещё раз
@@ -194,41 +247,56 @@
           if (attempt) await new Promise((r) => setTimeout(r, 1500 * attempt));
           try { pages = (await api.pages(url, c.link)).pages; } catch { /* повтор */ }
         }
-        if (!pages.length) { failed.push(c.name || c.label); continue; }
+        if (!pages.length) { if (!cancel) failed.push(c.name || c.label); continue; }
+        const width = Math.max(3, String(pages.length).length);
         const got = new Array(pages.length);
         let done = 0, next = 0;
-        // 4 картинки одновременно — быстро и без лишней нагрузки на сайт
+        // 4 картинки одновременно — быстро и без лишней нагрузки на сайт; каждую сразу на диск
         const worker = async () => {
           while (next < pages.length && !cancel) {
             const k = next++;
             for (let attempt = 0; attempt < 3 && !got[k]; attempt++) {
               try { got[k] = await api.image(url, c.link, pages[k]); } catch { /* повтор */ }
             }
+            if (got[k]) {
+              got[k].name = String(k + 1).padStart(width, '0') + '.' + extOf(got[k].mime, pages[k]);
+              try { await api.save(`${rel}/${got[k].name}`, got[k].bytes); } catch (e) { failed.push(`запись на диск: ${e.message}`); cancel = true; }
+            }
             done++;
             status(`Глава ${ci + 1} из ${list.length}: страница ${done} из ${pages.length}`, (ci + done / pages.length) / list.length);
           }
         };
         await Promise.all([worker(), worker(), worker(), worker()]);
-        const width = String(pages.length).length < 3 ? 3 : String(pages.length).length;
-        got.forEach((r, k) => {
-          if (!r) return;
-          const name = String(k + 1).padStart(width, '0') + '.' + extOf(r.mime, pages[k]);
-          items.push({ file: new File([r.bytes], name, { type: r.mime || 'image/jpeg' }), path: `${root}/${c.folder}/${name}` });
-        });
-        if (got.some((r) => !r)) failed.push(`${c.name || c.label} (не все страницы)`);
+        got.forEach((r) => { if (r) items.push({ file: new File([r.bytes], r.name, { type: r.mime || 'image/jpeg' }), path: `${rel}/${r.name}` }); });
+        if (got.length && got.every(Boolean)) c.saved = true;
+        else if (!cancel) failed.push(`${c.name || c.label} (не все страницы)`);
       }
     } finally {
       running = false;
-      $('#dlClose').textContent = '✕';
       $('#dlFind').disabled = false;
-      sync();
+      $('#dlPick').disabled = false;
+      renderList();
     }
-    if (!items.length) { status(cancel ? 'Остановлено.' : 'Ничего не скачалось. Возможно, сайт не отдаёт картинки.'); return; }
-    status('');
-    dlg.close();
-    await window.MangaForge.addInputs(items);
-    window.MangaForge.setTitle(info.title);
-    if (failed.length) window.MangaForge.toast(`Не скачались: ${failed.slice(0, 3).join('; ')}${failed.length > 3 ? ` и ещё ${failed.length - 3}` : ''}`);
-    else if (cancel) window.MangaForge.toast('Скачивание остановлено — добавлено то, что успело скачаться.');
+    const wasMin = minimized;
+    const note = failed.length ? ` Не скачались: ${failed.slice(0, 3).join('; ')}${failed.length > 3 ? ` и ещё ${failed.length - 3}` : ''}.` : '';
+    const where = `Сохранено в папку «${root}».`;
+    if (!items.length) { finish(cancel ? 'Остановлено.' : 'Ничего не скачалось. Возможно, сайт не отдаёт картинки.' + note, wasMin); return; }
+    if ($('#dlAdd').checked) {
+      if (dlg.open) dlg.close();
+      $('#dlPill').hidden = true;
+      await window.MangaForge.addInputs(items);
+      window.MangaForge.setTitle(info.title);
+      finish((cancel ? 'Остановлено — в книгу добавлено то, что успело скачаться. ' : 'Готово, главы в книге. ') + where + note, true);
+    } else {
+      finish((cancel ? 'Остановлено. ' : 'Готово. ') + where + note, wasMin);
+    }
+  }
+
+  // Итог: в окне, а если оно свёрнуто или уже закрыто — во всплывающей подсказке
+  function finish(text, outside) {
+    $('#dlPill').hidden = true;
+    minimized = false;
+    if (outside) window.MangaForge.toast(text);
+    else status(text);
   }
 })();

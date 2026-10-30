@@ -9,4 +9,10 @@ contextBridge.exposeInMainWorld('mfDownload', {
   image: (url, link, img) => ipcRenderer.invoke('dl:image', url, link, img),
   sites: () => ipcRenderer.invoke('dl:sites'),
   status: () => ipcRenderer.invoke('dl:status'),
+  folder: () => ipcRenderer.invoke('dl:folder'),
+  pickFolder: () => ipcRenderer.invoke('dl:pickFolder'),
+  openFolder: (rel) => ipcRenderer.invoke('dl:openFolder', rel),
+  save: (rel, bytes) => ipcRenderer.invoke('dl:save', rel, bytes),
+  readChapter: (rel) => ipcRenderer.invoke('dl:readChapter', rel),
+  hasChapters: (rels) => ipcRenderer.invoke('dl:hasChapters', rels),
 });

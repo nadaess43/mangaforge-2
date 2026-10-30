@@ -15,7 +15,7 @@
   };
 
   const THUMB_W = 420;
-  const IMAGE_RE = /\.(jpe?g|png|webp|bmp|gif)$/i;
+  const IMAGE_RE = /\.(jpe?g|png|webp|avif|bmp|gif)$/i;
   let st = { ...C.DEFAULTS, ...store.get('booklet.settings', {}) };
   if (!C.MODES[st.mode]) st.mode = 'booklet';
   let files = [];        // источники: {id, kind:'pdf'|'images', name, size, numPages, sizes, ...}
@@ -1221,10 +1221,11 @@
 
   // ---------- Сохранение ----------
   async function imageBytes(im) {
-    if (im.mime === 'image/jpeg' || im.mime === 'image/png') {
-      return { bytes: new Uint8Array(await im.blob.arrayBuffer()), mime: im.mime };
-    }
-    // webp, bmp, gif — переводим в JPEG
+    // Формат смотрим по содержимому: сайты отдают AVIF/WebP под именем .jpg
+    const raw = new Uint8Array(await im.blob.arrayBuffer());
+    if (raw[0] === 0xff && raw[1] === 0xd8 && raw[2] === 0xff) return { bytes: raw, mime: 'image/jpeg' };
+    if (raw[0] === 0x89 && raw[1] === 0x50 && raw[2] === 0x4e && raw[3] === 0x47) return { bytes: raw, mime: 'image/png' };
+    // webp, avif, bmp, gif — переводим в JPEG
     const bmp = await createImageBitmap(im.blob);
     const c = document.createElement('canvas');
     c.width = bmp.width;
