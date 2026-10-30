@@ -91,10 +91,12 @@ function createHttp({ fetchImpl, jar = new CookieJar(), log = () => {}, timeout 
       if (jarCookies.size) h.Cookie = [...jarCookies].map(([k, v]) => `${k}=${v}`).join('; ');
       if (method === 'POST' && body !== undefined && !Object.keys(h).some((k) => k.toLowerCase() === 'content-type')) h['Content-Type'] = 'application/x-www-form-urlencoded';
       let res;
+      const t0 = Date.now();
       try {
         res = await fetchImpl(target, { method, headers: h, body: method === 'POST' ? String(body ?? '') : undefined, redirect: manualRedirects && state.FollowRedirection ? 'manual' : 'follow', signal: AbortSignal.timeout(timeout) });
       } catch (e) {
-        log(`HTTP ${method} ${target}: ${e.message}`);
+        const why = e.name === 'TimeoutError' ? `нет ответа за ${timeout / 1000} с` : e.message + (e.cause ? ` (${e.cause.code || e.cause.message || e.cause})` : '');
+        log(`HTTP ${method} ${target} ✗ ${why} через ${Date.now() - t0} мс`, { request: h, body: method === 'POST' ? String(body ?? '').slice(0, 500) : undefined }, 'WARN');
         state.ResultCode = 0;
         return false;
       }
@@ -106,6 +108,7 @@ function createHttp({ fetchImpl, jar = new CookieJar(), log = () => {}, timeout 
       res.headers.forEach((v, k) => { responseHeaders.Values[k.replace(/(^|-)\w/g, (m) => m.toUpperCase())] = v; });
       const loc = res.headers.get('location');
       if (state.FollowRedirection && loc && [301, 302, 303, 307, 308].includes(res.status)) {
+        log(`HTTP ${method} ${target} → ${res.status} перенаправление на ${loc}`);
         target = new URL(loc, target).toString();
         if (res.status === 303) method = 'GET';
         continue;
@@ -116,7 +119,14 @@ function createHttp({ fetchImpl, jar = new CookieJar(), log = () => {}, timeout 
       state.LastURL = res.url || target;
       document.bytes = buf;
       document.text = /^(image|video|audio)\//.test(state.MimeType) ? '' : decodeBody(buf, ct);
-      log(`HTTP ${method} ${target} → ${res.status} (${buf.length} байт)`);
+      const final = res.url && res.url !== target ? ` (итоговый адрес ${res.url})` : '';
+      const line = `HTTP ${method} ${target} → ${res.status}${res.statusText ? ' ' + res.statusText : ''},${state.MimeType || 'без типа'}, ${buf.length} байт, ${Date.now() - t0} мс${final}`;
+      if (res.status >= 400 || !buf.length) {
+        // Ответ с ошибкой: что отправили, что пришло и начало тела — по нему видно капчу, «доступ запрещён» и т. п.
+        const head = {};
+        res.headers.forEach((v, k) => { head[k] = v; });
+        log(line, { request: h, response: head, body: document.text.replace(/\s+/g, ' ').slice(0, 600) }, 'WARN');
+      } else log(line);
       return buf.length > 0;
     }
     return false;

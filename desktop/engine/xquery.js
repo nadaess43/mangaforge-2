@@ -72,6 +72,10 @@ function itemToString(v) {
 // Значения JSON внутри результатов: null из JS-объектов → NULL
 const fromJs = (v) => (v === null ? NULL : v);
 
+// Предупреждения без привязки к скрипту (журнал задаёт setLogger)
+let warn = () => {};
+const setLogger = (fn) => { warn = fn || (() => {}); };
+
 // Xidel прощает висячие запятые, одинарные кавычки и ключи без кавычек — приводим к строгому JSON
 function lenientJSON(text) {
   const t = String(text).trim();
@@ -81,7 +85,7 @@ function lenientJSON(text) {
   try {
     const v = require('vm').runInNewContext('(' + t + ')', Object.create(null), { timeout: 1000 });
     if (v !== undefined && typeof v !== 'function') return JSON.stringify(v);
-  } catch (e) { if (process.env.MF_DEBUG) console.log('JSON не разобран:', e.message, JSON.stringify(t.slice(0, 120)), '…', JSON.stringify(t.slice(-120))); }
+  } catch (e) { warn(`JSON не разобран: ${e.message}`, { start: t.slice(0, 300), end: t.slice(-200) }); }
   return t;
 }
 
@@ -316,4 +320,4 @@ function createTXQuery(input, log) {
   };
 }
 
-module.exports = { createTXQuery, translate, evaluate, parseHTML, itemToString, makeValue, itemsOf, NULL };
+module.exports = { setLogger, createTXQuery, translate, evaluate, parseHTML, itemToString, makeValue, itemsOf, NULL };

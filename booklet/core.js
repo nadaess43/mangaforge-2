@@ -24,9 +24,14 @@
     booklet4: { cols: 2, rows: 2, landscape: false, perSide: 4 },
   };
   const isBooklet = (st) => st.mode === 'booklet' || st.mode === 'booklet4';
+  // Скрепление: 'fold' — тетради, согнутые пополам; 'punch' — лист режется на отдельные листки,
+  // у корешка остаётся поле под дырокол (кольца, диски, пружина — без клея)
+  const isPunch = (st) => st.binding === 'punch';
 
   const DEFAULTS = {
     mode: 'booklet',
+    binding: 'fold',
+    punchMargin: 15,      // поле под дырокол у корешка, мм
     paper: 'A4',
     rtl: false,
     sheetsPerSig: 4,
@@ -120,7 +125,8 @@
       seq.push(p);
     }
     if (!seq.some((x) => x !== null)) return { error: 'В книге не осталось страниц' };
-    const pad = (4 - (seq.length % 4)) % 4;
+    const unit = isPunch(st) ? 2 : 4;
+    const pad = (unit - (seq.length % unit)) % unit;
     const blanks = Array(pad).fill(null);
     if (st.keepLastAsBack && seq.length > 1) seq.splice(seq.length - 1, 0, ...blanks);
     else seq.push(...blanks);
@@ -148,6 +154,7 @@
   // Раскладка: какие страницы попадают на какую сторону какого листа.
   // Слот — это позиция последовательности (индекс в seq).
   function impose(seq, st) {
+    if (isPunch(st)) return imposePunch(seq, st);
     const { sheets: halves, signatures } = imposeSignatures(seq, st);
     if (st.mode !== 'booklet4') return { sheets: halves, signatures };
     // Две тетради на одном листе: нечётная сверху, следующая снизу.
@@ -171,6 +178,30 @@
       }
     }
     return { sheets, signatures };
+  }
+
+  // Дырокол: стопку режут целиком, стопки ячеек кладут друг на друга (первая ячейка сверху) — и листки сразу по порядку.
+  // Листок j: ячейка floor(j / N) листа j mod N; на лице стр. 2j, на обороте 2j+1.
+  // Оборот переворачивается так же, как у тетрадей: ячейка на обороте — зеркальная по горизонтали.
+  function imposePunch(seq, st) {
+    const k = MODES[st.mode].perSide;
+    const leafCount = seq.length / 2;
+    const N = Math.max(1, Math.ceil(leafCount / k));
+    const mirror = (c) => c ^ 1; // 0↔1, 2↔3: столбец меняется, ряд тот же
+    const sheets = [];
+    for (let i = 0; i < N; i++) {
+      const front = Array(k).fill(null), back = Array(k).fill(null);
+      const leaves = [];
+      for (let c = 0; c < k; c++) {
+        const j = c * N + i;
+        if (j >= leafCount) { leaves.push(null); continue; }
+        front[c] = 2 * j;
+        back[mirror(c)] = 2 * j + 1;
+        leaves.push({ no: j + 1, pages: [2 * j, 2 * j + 1] });
+      }
+      sheets.push({ globalNo: i + 1, front, back, leaves, sheetsTotal: N });
+    }
+    return { sheets, signatures: [], leafCount };
   }
 
   // Тетради и их листы (для booklet4 — половинки листа)
@@ -244,6 +275,23 @@
     return { W, H, slots };
   }
 
+  // Ячейки листа (в порядке слотов) — куски, на которые лист режется в режиме дырокола
+  function cells(st) {
+    const { W, H } = sheetSize(st);
+    if (MODES[st.mode].rows === 1) return [{ x: 0, y: 0, w: W / 2, h: H }, { x: W / 2, y: 0, w: W / 2, h: H }];
+    const out = [];
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) out.push({ x: c * W / 2, y: r === 0 ? H / 2 : 0, w: W / 2, h: H / 2 });
+    return out;
+  }
+
+  // Область страницы в ячейке листка: у корешка — поле под дырокол
+  function punchSlot(cell, spine, st) {
+    const p = st.punchMargin * MM, o = st.marginOuter * MM;
+    const l = spine === 'left' ? p : o, r = spine === 'left' ? o : p;
+    const t = st.marginTop * MM, b = st.marginBottom * MM;
+    return { x: cell.x + l, y: cell.y + b, w: Math.max(1, cell.w - l - r), h: Math.max(1, cell.h - t - b), spine, cell };
+  }
+
   // Где на листе окажется видимая (обрезанная) часть страницы.
   // vis: {w, h} — размер страницы как её видно (с учётом поворота).
   // creepSteps — номер листа от внешнего (для компенсации толщины бумаги).
@@ -271,7 +319,7 @@
     // Сдвиг по X: плюс — к внешнему краю (от корешка). Компенсация толщины — к корешку.
     const toOuter = slot.spine === 'right' ? -1 : 1;
     x += toOuter * st.shiftX * MM;
-    if (isBooklet(st)) x -= toOuter * st.creep * MM * creepSteps;
+    if (isBooklet(st) && !isPunch(st)) x -= toOuter * st.creep * MM * creepSteps;
     return { x, y, w, h, scale: s };
   }
 
@@ -301,12 +349,16 @@
     const seqRes = buildSequence(pagesMeta, st);
     if (seqRes.error) return { error: seqRes.error };
     const { seq } = seqRes;
-    const { sheets, signatures } = impose(seq, st);
+    const { sheets, signatures, leafCount } = impose(seq, st);
     const geo = slotRects(st);
-    const sideLayout = (positions, sheet) =>
+    const punch = isPunch(st);
+    const cs = punch ? cells(st) : null;
+    // Корешок листка: на лице слева (у манги справа), на обороте — с другой стороны
+    const punchSpine = (back) => ((st.rtl ? 'right' : 'left') === 'left') !== back ? 'left' : 'right';
+    const sideLayout = (positions, sheet, back) =>
       positions.map((pos, k) => {
-        const src = seq[pos];
-        const slot = geo.slots[k];
+        const src = pos === null ? null : seq[pos];
+        const slot = punch ? punchSlot(cs[k], punchSpine(back), st) : geo.slots[k];
         if (src === null || src === undefined) return { pos, src: null, slot };
         const m = pagesMeta[src];
         const half = sheet.halves ? sheet.halves[k < 2 ? 0 : 1] : sheet;
@@ -314,12 +366,13 @@
         return { pos, src, slot, rect: placePage(m, slot, st, creepSteps) };
       });
     for (const sh of sheets) {
-      sh.frontLayout = sideLayout(sh.front, sh);
-      sh.backLayout = sideLayout(sh.back, sh);
+      sh.frontLayout = sideLayout(sh.front, sh, false);
+      sh.backLayout = sideLayout(sh.back, sh, true);
     }
+    if (punch) geo.cells = cs;
     const blanks = seq.filter((x) => x === null).length;
     const cover = coverPlan(pagesMeta, st, seq.length);
-    return { seq, sheets, signatures, geo, blanks, padded: seqRes.padded, cover };
+    return { seq, sheets, signatures, geo, blanks, padded: seqRes.padded, cover, punch, leafCount };
   }
 
   // Размер страницы готовой книги, pt
@@ -343,6 +396,7 @@
     if (st.coverMode !== 'sheet') return null;
     const cov = coverPages(pagesMeta.length, st);
     if (cov.front === null && cov.back === null) return null;
+    if (isPunch(st)) return punchCoverPlan(pagesMeta, st, cov);
     const { w: bw, h: bh } = bookPageSize(st);
     const spine = Math.ceil(bookPages / 2) * st.paperThick * MM;
     const W = 2 * bw + spine, H = bh;
@@ -377,6 +431,35 @@
       PW, PH, paper, scale, W, H, bookW: bw, bookH: bh, spine,
       front, back, spinePanel: panel(bw, spine), whole, wrap, items,
     };
+  }
+
+  // Обложка под дырокол: перед и зад — два листка на одном листе (на плотной бумаге, одна сторона).
+  // Одна широкая картинка (зад + корешок + перед) делится: передняя половина на перед, задняя на зад.
+  function punchCoverPlan(pagesMeta, st, cov) {
+    const { W, H } = sheetSize(st);
+    const cs = cells(st);
+    const front = cs[0], back = cs[1];
+    const fm = cov.front !== null ? pagesMeta[cov.front] : null;
+    const wrap = !!fm && cov.back === null && fm.w > fm.h;
+    const items = [];
+    // Половина широкой картинки на всю ячейку: rightHalf — правая половина
+    const halfFill = (m, panel, rightHalf) => {
+      const c = cropOf(m, st);
+      const cw = m.w * Math.max(0.05, 1 - c.l - c.r), ch = m.h * Math.max(0.05, 1 - c.t - c.b);
+      const s = Math.max(panel.w / (cw / 2), panel.h / ch);
+      const w = cw * s, h = ch * s;
+      return { x: rightHalf ? panel.x + panel.w - w : panel.x, y: panel.y + (panel.h - h) / 2, w, h };
+    };
+    if (wrap) {
+      // Обычная книга: перед — правая половина развёртки; манга — левая
+      items.push({ src: cov.front, panel: front, R: halfFill(fm, front, !st.rtl) });
+      items.push({ src: cov.front, panel: back, R: halfFill(fm, back, st.rtl) });
+    } else {
+      if (fm) items.push({ src: cov.front, panel: front, R: placeFill(fm, front, st) });
+      if (cov.back !== null) items.push({ src: cov.back, panel: back, R: placeFill(pagesMeta[cov.back], back, st) });
+    }
+    const bp = bookPageSize(st);
+    return { punch: true, PW: W, PH: H, paper: st.paper, scale: 1, W, H, bookW: bp.w, bookH: bp.h, spine: 0, front, back, spinePanel: null, whole: null, wrap, items, cells: cs };
   }
 
   // Сборка PDF.
@@ -470,6 +553,16 @@
         const label = (half, y) => half && page.drawText(
           `T${half.sig} · L${half.sheetInSig}/${half.sheetsInSig} · ${sideName}`,
           { x: 3 * MM, y, size: 6, font, color: grey });
+        if (p.punch) {
+          // Разрез — сплошные засечки по краям листа; подпись: номер листа и сторона
+          line(W / 2, 0, W / 2, tick, false);
+          line(W / 2, H - tick, W / 2, H, false);
+          if (st.mode === 'booklet4') {
+            line(0, H / 2, tick, H / 2, false);
+            line(W - tick, H / 2, W, H / 2, false);
+          }
+          page.drawText(`L${sheet.globalNo}/${sheet.sheetsTotal} · ${sideName}`, { x: 3 * MM, y: 1.5 * MM, size: 6, font, color: grey });
+        } else {
         // Сгиб — пунктир по краям листа
         line(W / 2, 0, W / 2, tick, true);
         line(W / 2, H - tick, W / 2, H, true);
@@ -482,6 +575,7 @@
           label(sheet.halves[1], 1.5 * MM);
         } else {
           label(sheet, 1.5 * MM);
+        }
         }
       }
       done++;
@@ -511,8 +605,17 @@
         await drawSrc(doc, page, it.src, it.R);
         page.pushOperators(popGraphicsState());
       }
-      // Метки обрезки по углам и линии сгиба корешка — за краем обложки
       const grey = rgb(0.45, 0.45, 0.45);
+      if (c.punch) {
+        // Обложка под дырокол: только засечки разреза
+        const cut = (x1, y1, x2, y2) => page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: 0.5, color: grey });
+        cut(c.PW / 2, 0, c.PW / 2, 6 * MM);
+        cut(c.PW / 2, c.PH - 6 * MM, c.PW / 2, c.PH);
+        if (st.mode === 'booklet4') { cut(0, c.PH / 2, 6 * MM, c.PH / 2); cut(c.PW - 6 * MM, c.PH / 2, c.PW, c.PH / 2); }
+        cover = await doc.save();
+        return { main, back, cover, plan: p };
+      }
+      // Метки обрезки по углам и линии сгиба корешка — за краем обложки
       const A = c.whole, gap = 2 * MM, len = 5 * MM;
       const line = (x1, y1, x2, y2) => page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: 0.5, color: grey });
       for (const x of [A.x, A.x + A.w]) {
@@ -532,5 +635,5 @@
     return { main, back, cover, plan: p };
   }
 
-  return { MM, PAPERS, MODES, DEFAULTS, isBooklet, parseRange, buildSequence, signatureSizes, impose, slotRects, placePage, naturalBox, plan, generate, normRot, coverPages, bookPageSize, cropOf };
+  return { MM, PAPERS, MODES, DEFAULTS, isBooklet, isPunch, cells, parseRange, buildSequence, signatureSizes, impose, slotRects, placePage, naturalBox, plan, generate, normRot, coverPages, bookPageSize, cropOf };
 });

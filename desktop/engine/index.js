@@ -22,6 +22,7 @@ class Downloader {
     this.imagePrep = new Map(); // заголовки картинок, подготовленные скриптом, по главе и хосту
     this.index = null;
     this.options = {};
+    this.resolved = new Set(); // хосты, о которых уже написали в журнал
   }
 
   // Быстрый индекс без запуска скриптов: имя и адрес сайта из текста модуля
@@ -60,9 +61,10 @@ class Downloader {
     let s = this.scripts.get(file);
     if (!s) {
       const script = new SiteScript({ file, scriptsDir: this.scriptsDir, log: this.log, fetchImpl: this.fetchImpl, jar: this.jar, options: this.options, manualRedirects: this.manualRedirects });
-      s = script.load().then(() => script);
+      const t0 = Date.now();
+      s = script.load().then(() => { this.log(`Загружен скрипт ${path.basename(file)} за ${Date.now() - t0} мс: ${script.modules.map((m) => m.Name).join(', ')}`); return script; });
       this.scripts.set(file, s);
-      s.catch(() => this.scripts.delete(file));
+      s.catch((e) => { this.log(`Скрипт ${path.basename(file)} не загрузился`, e, 'ERROR'); this.scripts.delete(file); });
     }
     return s;
   }
@@ -77,7 +79,7 @@ class Downloader {
       } catch (e) {
         const broken = e instanceof WebAssembly.RuntimeError || /memory access out of bounds|unreachable|table index/i.test(String(e && e.message));
         if (!broken || attempt > 0) throw e;
-        this.log(`Lua: перезапуск ${r.script.file}`);
+        this.log(`Lua сломался, перезапускаю ${path.basename(r.script.file)} и повторяю`, e, 'WARN');
         this.scripts.delete(r.script.file);
         this.imagePrep.clear();
         try { r.script.close(); } catch { /* уже сломан */ }
@@ -88,16 +90,22 @@ class Downloader {
   // Найти модуль сайта для ссылки
   async resolve(url) {
     const h = hostOf(url);
-    for (const c of this.candidates(url)) {
+    const list = this.candidates(url);
+    for (const c of list) {
       const s = await this.script(c.file);
       const mods = s.modules.filter((m) => m.OnGetInfo);
       const m = mods.find((x) => hostOf(x.RootURL) === h) || mods.find((x) => domainOf(hostOf(x.RootURL)) === domainOf(h)) || mods.find((x) => labelOf(hostOf(x.RootURL)) === labelOf(h));
       if (m) {
         // Сайт переехал на другой домен — работаем с тем, что открыл пользователь
-        if (hostOf(m.RootURL) !== h) m.RootURL = new URL(url).origin;
+        if (hostOf(m.RootURL) !== h) {
+          this.log(`Сайт ${m.Name}: в скрипте адрес ${m.RootURL}, работаю с ${new URL(url).origin}`);
+          m.RootURL = new URL(url).origin;
+        }
+        if (!this.resolved.has(h)) { this.resolved.add(h); this.log(`Ссылка ${h} → модуль ${m.Name} (${path.basename(c.file)})`, undefined, 'INFO'); }
         return { script: s, module: m };
       }
     }
+    this.log(`Для ${h} нет скрипта сайта`, { проверено: list.map((c) => path.basename(c.file)) }, 'WARN');
     return null;
   }
 

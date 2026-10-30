@@ -5,6 +5,8 @@
   if (!api) return;
 
   const $ = (s) => document.querySelector(s);
+  const L = window.mfLogger;
+  const msgOf = (e) => String((e && e.message) || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const dlg = $('#dl');
   let info = null;      // ответ загрузчика: название, главы
@@ -47,6 +49,7 @@
   // Свернуть: окно прячется, скачивание идёт дальше, внизу справа — маленькая панель
   function minimize() {
     minimized = true;
+    L.info('загрузка', 'Окно свёрнуто, скачивание идёт дальше');
     dlg.close();
     $('#dlPill').hidden = false;
   }
@@ -54,7 +57,7 @@
   $('#dlClose').addEventListener('click', () => { if (running) minimize(); else dlg.close(); });
   dlg.addEventListener('cancel', (e) => { if (running) { e.preventDefault(); minimize(); } });
   $('#dlPillOpen').addEventListener('click', open);
-  $('#dlPillStop').addEventListener('click', () => { cancel = true; $('#dlPillText').textContent = 'Останавливаю…'; });
+  $('#dlPillStop').addEventListener('click', () => { cancel = true; L.info('загрузка', 'Нажата «Стоп» на свёрнутой панели'); $('#dlPillText').textContent = 'Останавливаю…'; });
 
   // Имя папки для Windows: без запрещённых знаков, точек и пробелов в конце
   const safe = (s) => String(s).replace(/[\\/:*?"<>|\x00-\x1f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120).replace(/[. ]+$/, '') || 'manga';
@@ -65,6 +68,7 @@
   $('#dlPick').addEventListener('click', async () => {
     const p = await api.pickFolder();
     if (!p) return;
+    L.info('загрузка', 'Новая папка загрузок: ' + p);
     showFolder(p);
     if (info) await markSaved();
   });
@@ -97,6 +101,7 @@
     url = $('#dlUrl').value.trim();
     if (!/^https?:\/\//i.test(url)) { status('Вставьте ссылку, начинающуюся с https://'); return; }
     status('Ищу мангу…');
+    L.info('загрузка', 'Ищу мангу по ссылке ' + url);
     $('#dlFind').disabled = true;
     $('#dlInfo').hidden = true;
     $('#dlTools').hidden = true;
@@ -105,6 +110,7 @@
     try {
       info = await api.info(url);
       if (!info.chapters.length) {
+        L.warn('загрузка', `Глав не нашлось (сайт ${info.site}, код ${info.code}, название «${info.title}»)`);
         status(info.code === 1 ? 'Сайт не ответил. Проверьте, открывается ли он в браузере.' : 'Глав не нашлось. Возможно, сайт требует входа в аккаунт или поменял вёрстку.');
         return;
       }
@@ -122,9 +128,11 @@
       await markSaved();
       renderList();
       const n = chapters.filter((c) => c.saved).length;
+      L.info('загрузка', `«${info.title}» (${info.site}): ${chapters.length} глав, уже в папке ${n}`, { папка: safe(info.title), тома: [...new Set(chapters.map((c) => c.vol))] });
       status(n ? `${n} из ${chapters.length} глав уже есть в папке — их не будем качать заново.` : '');
     } catch (e) {
-      status(String(e.message || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, ''));
+      L.error('загрузка', 'Поиск манги не удался: ' + url, e);
+      status(msgOf(e));
     } finally {
       $('#dlFind').disabled = false;
     }
@@ -145,7 +153,8 @@
     try {
       const r = await api.image(url, '', info.cover);
       if (r) img.src = URL.createObjectURL(new Blob([r.bytes], { type: r.mime || 'image/jpeg' }));
-    } catch { /* без обложки */ }
+      else L.warn('загрузка', 'Обложка не скачалась: ' + info.cover);
+    } catch (e) { L.warn('загрузка', 'Обложка не скачалась: ' + info.cover, msgOf(e)); }
   }
 
   function renderList() {
@@ -214,7 +223,7 @@
   const mimeOf = (name) => ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif' }[name.split('.').pop().toLowerCase()] || 'image/jpeg');
 
   $('#dlGo').addEventListener('click', () => {
-    if (running) { cancel = true; status('Останавливаю…'); } else download();
+    if (running) { cancel = true; L.info('загрузка', 'Нажата «Остановить»'); status('Останавливаю…'); } else download();
   });
 
   async function download() {
@@ -227,6 +236,9 @@
     const root = safe(info.title);
     const items = [];
     const failed = [];
+    const t0 = Date.now();
+    let bytes = 0;
+    L.info('загрузка', `Старт: ${list.length} глав «${info.title}» → папка «${root}»`, { главы: list.map((c) => c.name || c.label), сразу_в_книгу: $('#dlAdd').checked });
     try {
       for (let ci = 0; ci < list.length && !cancel; ci++) {
         const c = list[ci];
@@ -236,6 +248,7 @@
           status(`Глава ${ci + 1} из ${list.length}: беру из папки…`, ci / list.length);
           const files = await api.readChapter(rel);
           if (files.length) {
+            L.info('загрузка', `[${ci + 1}/${list.length}] ${c.name}: уже скачана, ${files.length} картинок с диска`);
             for (const f of files) items.push({ file: new File([f.bytes], f.name, { type: mimeOf(f.name) }), path: `${rel}/${f.name}` });
             continue;
           }
@@ -245,9 +258,12 @@
         // Сайты иногда отдают обрезанную страницу — пробуем ещё раз
         for (let attempt = 0; attempt < 3 && !pages.length && !cancel; attempt++) {
           if (attempt) await new Promise((r) => setTimeout(r, 1500 * attempt));
-          try { pages = (await api.pages(url, c.link)).pages; } catch { /* повтор */ }
+          try { pages = (await api.pages(url, c.link)).pages; } catch (e) { L.warn('загрузка', `[${ci + 1}/${list.length}] ${c.name}: список страниц, попытка ${attempt + 1} из 3 — ошибка`, msgOf(e)); continue; }
+          if (!pages.length) L.warn('загрузка', `[${ci + 1}/${list.length}] ${c.name}: сайт не дал страниц, попытка ${attempt + 1} из 3`, { ссылка: c.link });
         }
-        if (!pages.length) { if (!cancel) failed.push(c.name || c.label); continue; }
+        if (!pages.length) { if (!cancel) { failed.push(c.name || c.label); L.error('загрузка', `[${ci + 1}/${list.length}] ${c.name}: страниц нет после 3 попыток — глава пропущена`, { ссылка: c.link }); } continue; }
+        const tc = Date.now();
+        L.info('загрузка', `[${ci + 1}/${list.length}] ${c.name}: ${pages.length} страниц → ${rel}`);
         const width = Math.max(3, String(pages.length).length);
         const got = new Array(pages.length);
         let done = 0, next = 0;
@@ -256,11 +272,14 @@
           while (next < pages.length && !cancel) {
             const k = next++;
             for (let attempt = 0; attempt < 3 && !got[k]; attempt++) {
-              try { got[k] = await api.image(url, c.link, pages[k]); } catch { /* повтор */ }
+              try { got[k] = await api.image(url, c.link, pages[k]); } catch (e) { L.warn('загрузка', `${c.name}, стр. ${k + 1}: попытка ${attempt + 1} из 3 — ошибка`, { картинка: pages[k], ошибка: msgOf(e) }); continue; }
+              if (!got[k]) L.warn('загрузка', `${c.name}, стр. ${k + 1}: попытка ${attempt + 1} из 3 — пустой ответ`, { картинка: pages[k] });
             }
+            if (!got[k] && !cancel) L.error('загрузка', `${c.name}, стр. ${k + 1}: не скачалась`, { картинка: pages[k] });
             if (got[k]) {
               got[k].name = String(k + 1).padStart(width, '0') + '.' + extOf(got[k].mime, pages[k]);
-              try { await api.save(`${rel}/${got[k].name}`, got[k].bytes); } catch (e) { failed.push(`запись на диск: ${e.message}`); cancel = true; }
+              bytes += got[k].bytes.length;
+              try { await api.save(`${rel}/${got[k].name}`, got[k].bytes); } catch (e) { L.error('загрузка', `Не записалось на диск: ${rel}/${got[k].name}`, msgOf(e)); failed.push(`запись на диск: ${msgOf(e)}`); cancel = true; }
             }
             done++;
             status(`Глава ${ci + 1} из ${list.length}: страница ${done} из ${pages.length}`, (ci + done / pages.length) / list.length);
@@ -268,6 +287,8 @@
         };
         await Promise.all([worker(), worker(), worker(), worker()]);
         got.forEach((r) => { if (r) items.push({ file: new File([r.bytes], r.name, { type: r.mime || 'image/jpeg' }), path: `${rel}/${r.name}` }); });
+        const ok = got.filter(Boolean).length;
+        L.info('загрузка', `[${ci + 1}/${list.length}] ${c.name}: ${ok} из ${pages.length} страниц за ${((Date.now() - tc) / 1000).toFixed(1)} с`, { форматы: [...new Set(got.filter(Boolean).map((r) => r.mime))] });
         if (got.length && got.every(Boolean)) c.saved = true;
         else if (!cancel) failed.push(`${c.name || c.label} (не все страницы)`);
       }
@@ -278,7 +299,8 @@
       renderList();
     }
     const wasMin = minimized;
-    const note = failed.length ? ` Не скачались: ${failed.slice(0, 3).join('; ')}${failed.length > 3 ? ` и ещё ${failed.length - 3}` : ''}.` : '';
+    L[failed.length ? 'warn' : 'info']('загрузка', `${cancel ? 'Остановлено' : 'Закончено'} за ${Math.round((Date.now() - t0) / 1000)} с: ${items.length} картинок, скачано ${(bytes / 2 ** 20).toFixed(1)} МБ, ошибок ${failed.length}`, failed.length ? { не_скачались: failed } : undefined);
+    const note = failed.length ? ` Не скачались: ${failed.slice(0, 3).join('; ')}${failed.length > 3 ? ` и ещё ${failed.length - 3}` : ''}. Подробности — в «Журнале».` : '';
     const where = `Сохранено в папку «${root}».`;
     if (!items.length) { finish(cancel ? 'Остановлено.' : 'Ничего не скачалось. Возможно, сайт не отдаёт картинки.' + note, wasMin); return; }
     if ($('#dlAdd').checked) {

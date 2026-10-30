@@ -14,6 +14,7 @@
 !/booklet/core.js
 !/booklet/style.css
 !/booklet/downloader.js
+!/booklet/log.js
 !/booklet/README.md
 !/booklet/LICENSE
 !/booklet/lib/
@@ -24,6 +25,7 @@
 !/desktop/package-lock.json
 !/desktop/main.js
 !/desktop/preload.js
+!/desktop/logger.js
 !/desktop/engine/
 
 *.tmp.js

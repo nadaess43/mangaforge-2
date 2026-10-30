@@ -16,3 +16,13 @@ contextBridge.exposeInMainWorld('mfDownload', {
   readChapter: (rel) => ipcRenderer.invoke('dl:readChapter', rel),
   hasChapters: (rels) => ipcRenderer.invoke('dl:hasChapters', rels),
 });
+
+// Журнал: файл в «Документы\MangaForge\Логи» и живая лента для окна «Журнал»
+contextBridge.exposeInMainWorld('mfLog', {
+  write: (level, source, msg, data) => ipcRenderer.send('log:write', level, source, msg, data),
+  recent: () => ipcRenderer.invoke('log:recent'),
+  openFile: () => ipcRenderer.invoke('log:openFile'),
+  openFolder: () => ipcRenderer.invoke('log:openFolder'),
+  path: () => ipcRenderer.invoke('log:path'),
+  onEntry: (fn) => ipcRenderer.on('log:entry', (e, entry) => fn(entry)),
+});

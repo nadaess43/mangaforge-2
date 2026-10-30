@@ -24,6 +24,7 @@
   </div>
   <div class="top-actions">
     <button class="btn" id="btnOpen">Открыть PDF</button>
+    <button class="btn" id="btnLog" hidden>Журнал</button>
     <select id="theme" class="theme-sel" title="Оформление" aria-label="Оформление"></select>
     <button class="btn primary" id="btnSave" disabled>Скачать PDF для печати</button>
   </div>
@@ -52,13 +53,26 @@
         <label class="mode">
           <input type="radio" name="mode" value="booklet" data-k="mode">
           <span class="mode-ico"><svg viewBox="0 0 48 32"><rect x="3" y="5" width="42" height="24" rx="2"/><path d="M24 5v24" class="dash"/><text x="13" y="21">16</text><text x="31" y="21">1</text></svg></span>
-          <span class="mode-txt"><b>Обычная книга</b><small>2 страницы на стороне листа. Лист сгибается пополам.</small><small class="size" data-size="booklet"></small></span>
+          <span class="mode-txt"><b>Обычная книга</b><small data-fold-txt="2 страницы на стороне листа. Лист сгибается пополам." data-punch-txt="2 страницы на стороне листа. Лист режется пополам на 2 листка."></small><small class="size" data-size="booklet"></small></span>
         </label>
         <label class="mode">
           <input type="radio" name="mode" value="booklet4" data-k="mode">
           <span class="mode-ico"><svg viewBox="0 0 48 32"><rect x="10" y="1" width="28" height="30" rx="2"/><path d="M24 1v30" class="dash"/><path d="M6 16h36" class="cut"/><text x="13" y="12">8</text><text x="27" y="12">1</text><text x="12" y="27">16</text><text x="27" y="27">9</text></svg></span>
-          <span class="mode-txt"><b>Маленькая книга</b><small>4 страницы на стороне. Лист режется пополам — сразу 2 тетради.</small><small class="size" data-size="booklet4"></small></span>
+          <span class="mode-txt"><b>Маленькая книга</b><small data-fold-txt="4 страницы на стороне. Лист режется пополам — сразу 2 тетради." data-punch-txt="4 страницы на стороне. Лист режется на 4 листка."></small><small class="size" data-size="booklet4"></small></span>
         </label>
+      </div>
+      <div class="field">
+        <span class="lbl">Как скреплять</span>
+        <div class="seg">
+          <label><input type="radio" name="binding" value="fold" data-k="binding"><span>Сгибать тетрадями</span></label>
+          <label><input type="radio" name="binding" value="punch" data-k="binding"><span>Дырокол</span></label>
+        </div>
+        <span class="hint" data-show-punch>Листы режутся на отдельные листки, у корешка остаётся чистое поле под дырокол. Скрепить кольцами, дисками или пружиной — без клея и шитья. Порядок после разрезки менять не нужно.</span>
+      </div>
+      <div class="field" data-show-punch>
+        <span class="lbl">Поле под дырокол <output data-out="punchMargin" data-unit=" мм"></output></span>
+        <input type="range" min="6" max="30" step="1" data-k="punchMargin">
+        <span class="hint">Обычный дырокол пробивает в 10–12 мм от края, для колец и дисков хватает 12–15 мм.</span>
       </div>
     </details>
 
@@ -128,7 +142,7 @@
         </div>
       </div>
 
-      <div class="field" data-show="booklet">
+      <div class="field" data-show-fold>
         <span class="lbl">Листов в одной тетради <output data-out="sheetsPerSig"></output></span>
         <input type="range" min="1" max="16" step="1" data-k="sheetsPerSig">
         <div class="chips">
@@ -169,7 +183,7 @@
         <label class="field"><span class="sub">Сверху</span><input type="number" min="0" max="50" step="0.5" data-k="marginTop"></label>
         <label class="field"><span class="sub">Снизу</span><input type="number" min="0" max="50" step="0.5" data-k="marginBottom"></label>
         <label class="field"><span class="sub">Снаружи</span><input type="number" min="0" max="50" step="0.5" data-k="marginOuter"></label>
-        <label class="field"><span class="sub">У корешка</span><input type="number" min="0" max="50" step="0.5" data-k="marginInner"></label>
+        <label class="field" data-show-fold><span class="sub">У корешка</span><input type="number" min="0" max="50" step="0.5" data-k="marginInner"></label>
       </div>
       <div class="field">
         <span class="lbl">Масштаб <output data-out="scale" data-unit="%"></output></span>
@@ -179,7 +193,7 @@
         <label class="field"><span class="sub">Сдвиг к краю, мм</span><input type="number" min="-30" max="30" step="0.5" data-k="shiftX"></label>
         <label class="field"><span class="sub">Сдвиг вверх, мм</span><input type="number" min="-30" max="30" step="0.5" data-k="shiftY"></label>
       </div>
-      <div class="field" data-show="booklet">
+      <div class="field" data-show-fold>
         <span class="lbl">Толщина бумаги <output data-out="creep" data-unit=" мм"></output></span>
         <input type="range" min="0" max="0.5" step="0.05" data-k="creep">
         <span class="hint">Внутренние листы тетради при сгибе выступают. Этот сдвиг подтягивает их страницы к корешку. Для обычной бумаги 0–0,1.</span>
@@ -189,7 +203,7 @@
     <details class="sec">
       <summary>Обрезать поля сканов</summary>
       <p class="hint">Срезает белые или серые поля по краям каждой страницы, чтобы картинка стала крупнее.</p>
-      <button class="btn small wide" id="btnAutoCrop">✨ Найти поля автоматически</button>
+      <button class="btn small wide" id="btnAutoCrop">Найти поля автоматически</button>
       <div class="field"><span class="lbl">Сверху <output data-out="cropT" data-unit="%"></output></span><input type="range" min="0" max="25" step="0.5" data-k="cropT"></div>
       <div class="field"><span class="lbl">Снизу <output data-out="cropB" data-unit="%"></output></span><input type="range" min="0" max="25" step="0.5" data-k="cropB"></div>
       <div class="field"><span class="lbl">Слева <output data-out="cropL" data-unit="%"></output></span><input type="range" min="0" max="25" step="0.5" data-k="cropL"></div>
@@ -323,6 +337,30 @@
   <button class="btn small" id="dlPillStop">Стоп</button>
 </div>
 
+<dialog class="logdlg" id="logDlg">
+  <div class="dl-head">
+    <b>Журнал</b>
+    <span class="dl-head-btns"><button class="btn small" id="logClose" aria-label="Закрыть">✕</button></span>
+  </div>
+  <div class="log-tools">
+    <span class="chips" id="logFilter">
+      <button class="chip" data-f="all" title="Всё, включая каждый запрос и каждую картинку">Всё подробно</button>
+      <button class="chip on" data-f="main">Главное</button>
+      <button class="chip" data-f="errors">Ошибки</button>
+    </span>
+    <input id="logSearch" type="text" placeholder="Поиск" spellcheck="false">
+    <span class="hint" id="logCount"></span>
+  </div>
+  <div class="log-list" id="logList"></div>
+  <div class="log-foot">
+    <code id="logPath"></code>
+    <button class="btn small" id="logCopy">Копировать</button>
+    <button class="btn small" id="logFile">Открыть файл</button>
+    <button class="btn small" id="logFolder">Папка</button>
+  </div>
+</dialog>
+
+<script src="log.js"></script>
 <script src="app.js"></script>
 <script src="downloader.js"></script>
 </body>

@@ -19,6 +19,7 @@ Your files never leave your computer.
 - **Two book formats.**
   - *Regular book:* 2 pages per side of the sheet. A4 sheets give an A5 book.
   - *Small book:* 4 pages per side. Each A4 sheet is cut in half into two signatures, giving an A6 book.
+- **Two ways to bind.** Fold into signatures and sew or glue, or use a hole punch: sheets are cut into separate leaves with a blank margin at the spine, then bound with rings, discs or a coil, no glue needed. Pages are laid out so that after cutting the whole stack you just put the piles on top of each other and everything is in order.
 - **Right-to-left manga.** Page order and the spine on the right, just like the original.
 - **Double-page spreads.** Wide pages are split into two halves that always land on facing pages of the book.
 - **Covers handled the way scanlation groups release them.** Front and back covers are detected automatically from file names (cover, обложка, 000…) and can be picked by hand. The cover can be:
@@ -57,6 +58,9 @@ npm start
 ```
 
 The same app opens as a window, with an extra «⇣ Скачать по ссылке» (Download by link) button in the files panel.
+Downloads go to `DocumentsMangaForgeМанга<title><volume and chapter>`; the folder can be changed in the download window.
+
+The «Журнал» (Log) button, or Ctrl+Shift+L, shows everything the app does: every request to the site, script calls, errors with details. The same log is saved to `DocumentsMangaForgeЛоги<date>.log`. If something goes wrong, attach this file to the bug report. Passwords and cookies are not written to the log.
 
 Tip: before a big print run, print 1–2 sheets and check that the backs line up with the fronts.
 
@@ -90,8 +94,10 @@ booklet/
   style.css    styles and themes
   lib/         third-party libraries (local copies, no internet needed)
   downloader.js  download-by-link window (desktop version only)
+  log.js       log window (desktop version only)
 desktop/
   main.js      Electron window and download API
+  logger.js    log file and live log feed
   engine/      FMD-compatible engine: Lua 5.4 (wasmoon), Xidel-style XPath/JSON queries (fontoxpath), HTTP
   (site scripts from FMD2 are downloaded from GitHub on first launch)
 ```

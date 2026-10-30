@@ -1,57 +1,63 @@
+/* Оформление «печатный цех»: бумага, типографская краска, красный цвет меток реза.
+   Прямые углы, линейки вместо карточек, жёсткие тени как у оттиска. */
 :root {
-  --bg: #f4f2ee;
-  --surface: #ffffff;
-  --surface-2: #f0ede7;
-  --border: #e1ddd5;
-  --text: #1f1d1a;
-  --muted: #6d685f;
-  --accent: #4f46e5;
-  --accent-soft: #e9e8fd;
+  --bg: #e9e5db;
+  --surface: #f4f1ea;
+  --surface-2: #e2ddd1;
+  --border: #c5bdac;
+  --text: #191714;
+  --muted: #6a6356;
+  --accent: #c7361b;
+  --accent-soft: #f1d8cd;
   --accent-text: #ffffff;
-  --side-a: #0d9488;
-  --side-b: #d97706;
-  --danger: #dc2626;
+  --side-a: #1f6f5c;
+  --side-b: #b8650f;
+  --danger: #c7361b;
   --paper: #ffffff;
-  --paper-shadow: 0 1px 2px rgba(0,0,0,.08), 0 4px 14px rgba(0,0,0,.08);
-  --slot: rgba(79,70,229,.35);
-  --radius: 10px;
+  --paper-shadow: 0 0 0 1px rgba(25,23,20,.18), 3px 3px 0 rgba(25,23,20,.16);
+  --slot: rgba(199,54,27,.35);
+  --radius: 0px;
   --sheet-w: 380px;
+  --f-ui: "Bahnschrift", "DIN Alternate", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  --f-text: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --f-mono: "Cascadia Mono", "Cascadia Code", Consolas, "SF Mono", monospace;
+  --f-serif: "Georgia", "Palatino Linotype", "Book Antiqua", serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #141418;
-    --surface: #1d1d22;
-    --surface-2: #26262d;
-    --border: #33333b;
-    --text: #ececf1;
-    --muted: #9a9aa6;
-    --accent: #8b84ff;
-    --accent-soft: #2b2a4a;
-    --accent-text: #11111a;
-    --side-a: #2dd4bf;
-    --side-b: #fbbf24;
-    --danger: #f87171;
-    --paper-shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.45);
-    --slot: rgba(139,132,255,.45);
+    --bg: #131210;
+    --surface: #1b1a17;
+    --surface-2: #24221e;
+    --border: #3d3a32;
+    --text: #ebe5d6;
+    --muted: #9c9483;
+    --accent: #ff6a40;
+    --accent-soft: #3b231a;
+    --accent-text: #131210;
+    --side-a: #4fb39a;
+    --side-b: #e0a04a;
+    --danger: #ff6a40;
+    --paper-shadow: 0 0 0 1px rgba(0,0,0,.6), 3px 3px 0 rgba(0,0,0,.55);
+    --slot: rgba(255,106,64,.45);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #141418;
-  --surface: #1d1d22;
-  --surface-2: #26262d;
-  --border: #33333b;
-  --text: #ececf1;
-  --muted: #9a9aa6;
-  --accent: #8b84ff;
-  --accent-soft: #2b2a4a;
-  --accent-text: #11111a;
-  --side-a: #2dd4bf;
-  --side-b: #fbbf24;
-  --danger: #f87171;
-  --paper-shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.45);
-  --slot: rgba(139,132,255,.45);
+  --bg: #131210;
+  --surface: #1b1a17;
+  --surface-2: #24221e;
+  --border: #3d3a32;
+  --text: #ebe5d6;
+  --muted: #9c9483;
+  --accent: #ff6a40;
+  --accent-soft: #3b231a;
+  --accent-text: #131210;
+  --side-a: #4fb39a;
+  --side-b: #e0a04a;
+  --danger: #ff6a40;
+  --paper-shadow: 0 0 0 1px rgba(0,0,0,.6), 3px 3px 0 rgba(0,0,0,.55);
+  --slot: rgba(255,106,64,.45);
   color-scheme: dark;
 }
 
@@ -280,6 +286,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .paper .slot { position: absolute; border: 1px dashed var(--slot); border-radius: 2px; }
 .paper .fold { position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1.5px dashed rgba(0,0,0,.28); }
 .paper .cut { position: absolute; left: 0; right: 0; top: 50%; border-top: 1px dashed rgba(225,29,72,.6); }
+.paper .cut.cut-v { top: 0; bottom: 0; left: 50%; right: auto; border-top: none; border-left: 1px dashed rgba(225,29,72,.6); }
+/* Поле под дырокол: штриховка у корешка листка */
+.paper .hole-zone { position: absolute; background: repeating-linear-gradient(45deg, rgba(0,0,0,.07) 0 3px, transparent 3px 7px); }
 
 /* Обложка */
 .cover-pick { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
@@ -358,6 +367,8 @@ figcaption { display: flex; gap: 7px; align-items: center; margin-top: 7px; font
 .pic .k-num { font-size: 17px; font-weight: 800; fill: #1f1d1a; font-variant-numeric: tabular-nums; }
 .pic .k-cap { font-size: 11px; fill: var(--muted); }
 .pic .k-scis { font-size: 16px; fill: var(--danger); }
+.pic .k-hole { fill: var(--surface); stroke: #3b3833; stroke-width: 1.2; }
+.pic .k-ring { fill: none; stroke: var(--accent); stroke-width: 2.4; }
 @media (max-width: 640px) { .steps li { grid-template-columns: 1fr; } .steps .pic { max-width: 260px; } }
 .steps span b { color: var(--text); }
 .steps span { color: var(--muted); }
@@ -553,3 +564,207 @@ h3.block-title { font-size: 15px; margin: 6px 0 10px; }
 }
 .dl-pill-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .dl-pill-text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Журнал (настольная версия) */
+.logdlg {
+  width: min(1100px, calc(100vw - 32px)); height: min(760px, calc(100vh - 32px));
+  border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px;
+  background: var(--surface); color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+.logdlg[open] { display: flex; flex-direction: column; gap: 10px; }
+.logdlg::backdrop { background: rgba(0,0,0,.45); }
+.log-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.log-tools input { flex: 1; min-width: 160px; }
+.log-list {
+  flex: 1; min-height: 0; overflow: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2);
+  font: 12px/1.45 Consolas, "Cascadia Mono", monospace; padding: 6px 0; user-select: text;
+}
+.log-row { padding: 0 10px; white-space: pre-wrap; word-break: break-word; }
+.log-row.debug { color: var(--muted); }
+.log-row.warn { color: color-mix(in srgb, #d97706 75%, var(--text)); }
+.log-row.error { color: var(--danger); font-weight: 600; background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.log-foot { display: flex; gap: 8px; align-items: center; }
+.log-foot code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; font-size: 12px; color: var(--muted); }
+#btnLog.has-errors { border-color: var(--danger); color: var(--danger); font-weight: 600; }
+
+/* ================= Печатный цех: внешний вид поверх базовой разметки ================= */
+
+/* Прямые углы везде, кроме круглых значков на картинках */
+.btn, .chip, .seg, .seg span, .mode, .tabs, .tabs button, .summary, .files li, .drop, .how li,
+.steps li, .sig-card, .v-card, .ochip, .stack .blk, .sig-tag, .intro, .side, .num, .cthumb,
+.dl, .logdlg, .dl-list, .dl-pill, .busy-box, .toast, .dl-folder code, .dl-info img, .log-list,
+input[type="text"], input[type="url"], input[type="number"], select, .paper, .blank { border-radius: 0 !important; }
+
+body { font-family: var(--f-text); }
+.btn, .chip, .seg span, .tabs button, .lbl, .sec > summary, .mode-txt b, .sig-tag, .side, .stat span,
+.ochip, h3.block-title, .sig-card h4, .v-card h4, .steps li > div > b, .v-title b, .dl-head b, .how b { font-family: var(--f-ui); }
+.stat b, .lbl output, .num, .sheet-pages, .sig-head span, .files .fm, .chip, .ochip, .side,
+.stack .blk span, .sig-card li, .v-scrub span, .dl-folder code, .dl-status, #finishedSize, .mode-txt small.size { font-variant-numeric: tabular-nums; }
+.stat b, .lbl output, .num, .files .ftype, .sheet-label small, figcaption { font-family: var(--f-mono); }
+.mode-txt small.size { font-family: var(--f-ui); }
+
+/* Шапка: линейка толщиной в краску */
+.top { background: var(--bg); border-bottom: 2px solid var(--text); padding: 9px 18px; }
+.brand svg { width: 30px; height: 30px; }
+.brand .b1, .brand .b2 { fill: var(--text); }
+.brand .b1 { opacity: 1; } .brand .b2 { opacity: .72; }
+.brand .b3 { stroke: var(--bg); stroke-width: 1.6; }
+.brand h1 { font-family: var(--f-ui); font-weight: 700; font-size: 19px; letter-spacing: .01em; text-transform: uppercase; }
+.brand h1::after { content: ""; display: inline-block; width: 7px; height: 7px; background: var(--accent); margin-left: 6px; vertical-align: .18em; }
+.brand p { font-family: var(--f-mono); font-size: 11px; letter-spacing: .02em; }
+
+/* Кнопки: рамка краской, при наведении — заливка; главная — красная с жёсткой тенью */
+.btn {
+  background: transparent; border: 1px solid var(--text); color: var(--text);
+  font-size: 14px; letter-spacing: .01em; padding: 7px 14px;
+  transition: background .12s, color .12s, transform .12s, box-shadow .12s;
+}
+.btn:hover:not(:disabled) { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.btn.primary:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); filter: none; transform: translate(-2px, -2px); box-shadow: 2px 2px 0 var(--text); }
+.btn.primary:active:not(:disabled) { transform: none; box-shadow: none; }
+.btn.small { font-size: 13px; padding: 4px 10px; }
+.btn.ghost { border-color: var(--border); color: var(--muted); }
+.btn:disabled { opacity: .35; }
+.theme-sel { background: transparent; border-color: var(--text); font-family: var(--f-ui); }
+
+/* Левая панель: разделы с номерами, как главы в техкарте */
+.panel { background: var(--surface); border-right: 1px solid var(--text); counter-reset: sec; padding: 0 16px 18px; }
+.sec { border-bottom: 1px solid var(--border); counter-increment: sec; padding: 4px 0 12px; }
+.sec > summary { color: var(--text); font-size: 13px; font-weight: 600; letter-spacing: .08em; padding: 12px 0 8px; justify-content: flex-start; gap: 10px; }
+.sec > summary::before { content: counter(sec, decimal-leading-zero); font-family: var(--f-mono); color: var(--accent); font-size: 12px; letter-spacing: 0; }
+.sec > summary::after { content: "−"; margin-left: auto; font-family: var(--f-mono); color: var(--muted); transform: none !important; }
+.sec:not([open]) > summary::after { content: "+"; }
+.lbl { font-size: 13px; font-weight: 500; letter-spacing: .02em; }
+.lbl output { color: var(--accent); font-weight: 600; }
+.hint, .sub { line-height: 1.45; }
+
+input[type="text"], input[type="url"], input[type="number"], select {
+  background: var(--bg); border: 1px solid var(--border); border-bottom-color: var(--muted); padding: 6px 8px;
+}
+input[type="text"]:focus, input[type="url"]:focus, input[type="number"]:focus, select:focus { border-color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+input[type="range"] { accent-color: var(--text); }
+.check input { accent-color: var(--text); }
+
+/* Переключатели: ряд ячеек в одной рамке, выбранная залита краской */
+.seg { background: transparent; border: 1px solid var(--text); padding: 0; gap: 0; }
+.seg label + label { border-left: 1px solid var(--text); }
+.seg3 label + label { border-left: none; border-top: 1px solid var(--text); }
+.seg span { padding: 7px 6px; font-size: 13px; color: var(--muted); }
+.seg label:hover span { color: var(--text); }
+.seg input:checked + span { background: var(--text); color: var(--bg); box-shadow: none; font-weight: 500; }
+
+.chip { background: transparent; border: 1px solid var(--border); padding: 1px 9px; }
+.chip:hover { border-color: var(--text); }
+.chip.on { background: var(--text); border-color: var(--text); color: var(--bg); font-weight: 500; }
+
+/* Формат книги: выбранный — рамка краской и красная полоса слева */
+.mode { border: 1px solid var(--border); background: transparent; padding: 10px 12px; }
+.mode:hover { border-color: var(--muted); }
+.mode:has(input:checked) { border-color: var(--text); background: var(--bg); box-shadow: inset 4px 0 0 var(--accent); }
+.mode-txt b { font-weight: 600; font-size: 14px; }
+.mode-txt small.size { color: var(--text); font-size: 11.5px; margin-top: 3px; }
+.mode-ico rect { stroke: var(--text); }
+.mode-ico path { stroke: var(--text); }
+.mode-ico text { fill: #191714; font-family: var(--f-mono); }
+
+/* Файлы: строки ведомости */
+.files { gap: 0; border-top: 1px solid var(--text); }
+.files li { background: transparent; border-bottom: 1px dashed var(--border); padding: 7px 2px; }
+.files .ftype { color: var(--muted); }
+.files .fkey { color: var(--accent); }
+
+/* Пустой экран: лист с метками обреза по углам */
+.empty { max-width: 960px; margin: 28px auto; }
+.drop {
+  border: none; background: var(--paper); color: #191714; padding: 56px 40px 44px; text-align: left; position: relative;
+  box-shadow: var(--paper-shadow);
+  --cm: #191714;
+  background-image:
+    linear-gradient(var(--cm), var(--cm)), linear-gradient(var(--cm), var(--cm)),
+    linear-gradient(var(--cm), var(--cm)), linear-gradient(var(--cm), var(--cm)),
+    linear-gradient(var(--cm), var(--cm)), linear-gradient(var(--cm), var(--cm)),
+    linear-gradient(var(--cm), var(--cm)), linear-gradient(var(--cm), var(--cm));
+  background-size: 18px 1px, 1px 18px, 18px 1px, 1px 18px, 18px 1px, 1px 18px, 18px 1px, 1px 18px;
+  background-position: 10px 18px, 18px 10px, calc(100% - 10px) 18px, calc(100% - 18px) 10px,
+    10px calc(100% - 18px), 18px calc(100% - 10px), calc(100% - 10px) calc(100% - 18px), calc(100% - 18px) calc(100% - 10px);
+  background-repeat: no-repeat;
+}
+.drop svg { display: none; }
+.drop h2 { font-family: var(--f-serif); font-weight: 400; font-size: 34px; line-height: 1.15; margin: 0 0 10px; max-width: 620px; letter-spacing: -.01em; }
+.drop p { color: #6a6356; font-size: 15px; }
+.drop-actions { justify-content: flex-start; }
+.drop .btn:not(.primary) { color: #191714; border-color: #191714; }
+.drop .btn:not(.primary):hover { background: #191714; color: #fff; }
+.how { gap: 0; margin-top: 30px; border-top: 2px solid var(--text); }
+.how li { background: transparent; border: none; border-right: 1px solid var(--border); padding: 16px 18px 6px; }
+.how li:last-child { border-right: none; }
+.how b { font-size: 16px; font-weight: 600; }
+.how b::before { content: counter(how, decimal-leading-zero) "  "; font-family: var(--f-mono); color: var(--accent); white-space: pre; }
+.how svg { height: 70px; }
+.how .paper { stroke: var(--text); }
+.how text { font-family: var(--f-mono); fill: #191714; }
+.how .l1 { stroke: var(--text); } .how .l2 { stroke: var(--accent); } .how .l3 { stroke: var(--muted); }
+.how .t1 { fill: var(--text); opacity: 1; } .how .t2 { fill: var(--accent); opacity: 1; } .how .t3 { fill: var(--muted); opacity: 1; }
+.how .glue { stroke: var(--text); }
+
+/* Сводка: строка цифр между двумя линейками */
+.summary { background: transparent; border: none; border-top: 2px solid var(--text); border-bottom: 1px solid var(--text); padding: 12px 2px; gap: 6px 26px; }
+.stat b { font-size: 24px; font-weight: 500; letter-spacing: -.02em; }
+.stat span { font-size: 12px; letter-spacing: .03em; text-transform: lowercase; }
+.arrow { font-family: var(--f-mono); color: var(--accent); }
+.summary .print-hint { border-top: 1px dashed var(--border); }
+
+/* Вкладки: подчёркивание, без «таблеток» */
+.tabs-bar { border-bottom: 1px solid var(--border); padding: 4px 0 0; }
+.tabs { background: transparent; padding: 0; gap: 2px; }
+.tabs button { padding: 9px 14px 8px; font-weight: 500; font-size: 14px; letter-spacing: .02em; border-bottom: 3px solid transparent !important; color: var(--muted); }
+.tabs button:hover { color: var(--text); }
+.tabs button[aria-selected="true"] { background: transparent; box-shadow: none; color: var(--text); border-bottom-color: var(--accent) !important; }
+
+/* Листы и тетради */
+.sig-tag { background: var(--text); color: var(--bg); font-weight: 500; letter-spacing: .04em; padding: 2px 9px; }
+.intro { background: transparent; border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; }
+.num { background: #191714; box-shadow: none; font-weight: 600; padding: .05em .45em; }
+.side { color: #fff; font-weight: 600; padding: 0 6px; }
+.paper .slot { border-color: var(--slot); }
+.blank { color: #8f877a; background: repeating-linear-gradient(-45deg, #fbfaf7 0 6px, #f1eee7 6px 12px); font-family: var(--f-mono); }
+figcaption { font-size: 11.5px; }
+
+/* Как собрать: крупный номер шага вместо кружка */
+.steps { gap: 0; border-top: 2px solid var(--text); }
+.steps li { background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 18px 0 18px 64px; }
+.steps li::before {
+  content: counter(st, decimal-leading-zero); background: none; color: var(--accent);
+  width: auto; height: auto; left: 0; top: 16px; font-family: var(--f-mono); font-size: 26px; font-weight: 500; display: block;
+}
+.steps li > div > b { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.pic .k-p { stroke: #191714; }
+.pic .k-ar { stroke: var(--accent); }
+.pic .k-ah { fill: var(--accent); }
+.pic .k-p.k-cov { fill: var(--accent-soft); stroke: var(--accent); }
+.pic .k-ring { stroke: var(--text); }
+h3.block-title { font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; border-bottom: 1px solid var(--text); padding-bottom: 6px; margin-top: 22px; }
+.stack .blk { background: transparent; border: 1px solid var(--text); border-top: 4px solid var(--accent); }
+.sig-card, .v-card { background: transparent; border: 1px solid var(--border); border-top: 2px solid var(--text); }
+.sig-card svg .sheet.outer { stroke: var(--accent); }
+.ochip { background: transparent; }
+.ochip.cur { border-color: var(--text); box-shadow: inset 0 -3px 0 var(--accent); }
+
+/* Готовая книга и листание */
+.v-title b { font-weight: 600; font-size: 18px; }
+
+/* Слои поверх: окна с рамкой краской и жёсткой тенью */
+.dl, .logdlg { border: 2px solid var(--text); box-shadow: 8px 8px 0 rgba(0,0,0,.28); }
+.dl::backdrop, .logdlg::backdrop { background: rgba(19,18,16,.55); }
+.dl-list, .log-list { background: var(--bg); }
+.dl-ch:hover { background: var(--accent-soft); }
+.dl-pill { border: 2px solid var(--text); box-shadow: 5px 5px 0 rgba(0,0,0,.25); }
+.busy-box { border: 2px solid var(--text); box-shadow: 6px 6px 0 rgba(0,0,0,.25); }
+.bar { background: var(--surface-2); }
+.bar, .bar div { border-radius: 0 !important; }
+.toast { font-family: var(--f-ui); letter-spacing: .01em; box-shadow: 4px 4px 0 var(--accent); }
+.dropveil { border-style: solid; border-width: 3px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.dropveil div { border: 2px solid var(--text); border-radius: 0 !important; font-family: var(--f-ui); }
+.log-row.error { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+#btnLog.has-errors { border-color: var(--danger); color: var(--danger); }

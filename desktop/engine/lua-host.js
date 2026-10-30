@@ -198,17 +198,17 @@ class SiteScript {
     const libs = {
       'fmd.crypto': cryptoLib,
       'fmd.env': env,
-      'fmd.duktape': { ExecJS: (src) => { try { const r = vm.runInNewContext(String(src), {}, { timeout: 5000 }); return r === undefined || r === null ? '' : String(r); } catch (e) { self.log('ExecJS: ' + e.message); return ''; } } },
-      'fmd.logger': { send: (s) => self.log(String(s)), SendError: (s) => self.log(String(s)), SendWarning: (s) => self.log(String(s)) },
+      'fmd.duktape': { ExecJS: (src) => { try { const r = vm.runInNewContext(String(src), {}, { timeout: 5000 }); return r === undefined || r === null ? '' : String(r); } catch (e) { self.log('ExecJS: ' + e.message, String(src).slice(0, 300), 'WARN'); return ''; } } },
+      'fmd.logger': { send: (s) => self.log('Lua: ' + s, undefined, 'INFO'), SendError: (s) => self.log('Lua: ' + s, undefined, 'ERROR'), SendWarning: (s) => self.log('Lua: ' + s, undefined, 'WARN') },
     };
     this.lua.global.set('__mf', {
       lib: (name) => libs[name],
       source: (name) => this.readSource(name),
       sleep: (ms) => new Promise((r) => setTimeout(r, Math.min(Number(ms) || 0, 10000))),
-      log: (s) => this.log(String(s)),
+      log: (s) => this.log('Lua print: ' + s),
     });
     const G = this.lua.global;
-    G.set('CreateTXQuery', (input) => createTXQuery(input, (m) => this.log(m)));
+    G.set('CreateTXQuery', (input) => createTXQuery(input, (m) => this.log(m, undefined, 'WARN')));
     G.set('MaybeFillHost', maybeFillHost);
     G.set('MangaInfoStatusIfPos', mangaInfoStatusIfPos);
     G.set('Trim', (s, chars) => (chars ? String(s).replace(new RegExp(`^[${chars.replace(/[\]\\^-]/g, '\\$&')}]+|[${chars.replace(/[\]\\^-]/g, '\\$&')}]+$`, 'g'), '') : String(s ?? '').trim()));
@@ -253,11 +253,21 @@ class SiteScript {
   call(module, handler, globals) {
     const fn = module[handler];
     if (!fn) return Promise.resolve(undefined);
-    const run = this.queue.then(() => {
+    const where = `${module.Name}.${fn}`;
+    const run = this.queue.then(async () => {
       const G = this.lua.global;
       G.set('MODULE', module);
       for (const [k, v] of Object.entries(globals)) G.set(k, v);
-      return this.exec(`${globals.__http ? 'HTTP = MakeHTTP(__http) ' : ''}return ${fn}()`);
+      const t0 = Date.now();
+      this.log(`Скрипт ${where}(${globals.URL !== undefined ? JSON.stringify(String(globals.URL)) : ''}) — старт`);
+      try {
+        const r = await this.exec(`${globals.__http ? 'HTTP = MakeHTTP(__http) ' : ''}return ${fn}()`);
+        this.log(`Скрипт ${where} → ${JSON.stringify(r ?? null)} за ${Date.now() - t0} мс`);
+        return r;
+      } catch (e) {
+        this.log(`Скрипт ${where} упал через ${Date.now() - t0} мс (${path.basename(this.file)})`, e, 'ERROR');
+        throw e;
+      }
     });
     this.queue = run.catch(() => {});
     return run;

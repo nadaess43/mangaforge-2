@@ -6,6 +6,7 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const collator = new Intl.Collator('ru', { numeric: true, sensitivity: 'base' });
+  const L = window.mfLogger;
 
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdf.worker.min.js';
 
@@ -178,8 +179,8 @@
         const bmp = await createImageBitmap(blob);
         imgs.push({ name: e.name, blob, mime, w: bmp.width, h: bmp.height });
         bmp.close();
-      } catch {
-        console.warn('не картинка в архиве', e.name);
+      } catch (err) {
+        L.warn('файлы', `Не картинка или битый файл в архиве ${file.name}: ${e.name}`, err);
       }
     }
     return imgs;
@@ -192,7 +193,10 @@
     const archives = items.filter((it) => /\.(cbz|zip)$/i.test(it.file.name));
     // Картинки берём только из папок глав
     const images = items.filter((it) => IMAGE_RE.test(it.file.name) && it.path.includes('/'));
+    L.info('файлы', `Добавляю: ${items.length} файлов (PDF ${pdfs.length}, архивов ${archives.length}, картинок ${images.length})`);
+    const t0 = Date.now();
     if (!pdfs.length && !images.length && !archives.length) {
+      L.warn('файлы', 'Ничего подходящего', items.slice(0, 20).map((it) => it.path || it.file.name));
       toast('Нужен PDF, CBZ или папка с главами. DJVU и CBR сначала переведите в PDF или CBZ.');
       return;
     }
@@ -230,8 +234,8 @@
             const bmp = await createImageBitmap(it.file);
             imgs.push({ name: it.file.name, blob: it.file, mime: it.file.type, w: bmp.width, h: bmp.height });
             bmp.close();
-          } catch {
-            console.warn('не картинка', it.path);
+          } catch (err) {
+            L.warn('файлы', `Не картинка или формат не поддерживается: ${it.path} (${it.file.type || 'без типа'}, ${it.file.size} байт)`, err);
           }
           if (++done % 10 === 0) busy(true, `Читаю картинки: ${done} из ${images.length}`, done / images.length);
         }
@@ -242,7 +246,9 @@
           images: imgs, numPages: imgs.length, sizes: imgs.map((x) => ({ w: x.w, h: x.h })),
         });
       }
+      L.info('файлы', `Открыто за ${Date.now() - t0} мс, всего в книге ${files.length} файлов, ${files.reduce((n, x) => n + x.numPages, 0)} страниц`, files.map((x) => `${x.name}: ${x.numPages} стр.`));
     } catch (e) {
+      L.error('файлы', 'Не получилось открыть', e);
       toast('Не получилось открыть: ' + e.message);
     } finally {
       // Весь список — по томам и главам, даже если добавляли в несколько заходов
@@ -517,6 +523,7 @@
           v = parseFloat(el.value);
           if (Number.isNaN(v)) return;
         } else v = el.value;
+        if (st[k] !== v) L.info('настройки', `${k}: ${JSON.stringify(st[k])} → ${JSON.stringify(v)}`);
         st[k] = v;
         syncControls(el);
         // От этих настроек зависит, как режутся развороты
@@ -526,6 +533,7 @@
     }
     for (const b of $$('[data-set]')) {
       b.addEventListener('click', () => {
+        L.info('настройки', `${b.dataset.set}: ${JSON.stringify(st[b.dataset.set])} → ${+b.dataset.v}`);
         st[b.dataset.set] = +b.dataset.v;
         if (b.dataset.set === 'sheetsPerSig') st.oneSig = false;
         syncControls();
@@ -558,6 +566,10 @@
     for (const c of $$('[data-set]')) c.classList.toggle('on', !st.oneSig && st[c.dataset.set] === +c.dataset.v);
     for (const el of $$('[data-show-duplex]')) el.hidden = st.duplex !== el.dataset.showDuplex;
     for (const el of $$('[data-show-num]')) el.hidden = !st.pageNumbers;
+    const punch = C.isPunch(st);
+    for (const el of $$('[data-show-fold]')) el.hidden = punch;
+    for (const el of $$('[data-show-punch]')) el.hidden = !punch;
+    for (const el of $$('[data-fold-txt]')) el.textContent = punch ? el.dataset.punchTxt : el.dataset.foldTxt;
     for (const el of $$('[data-size]')) el.textContent = 'Готовая книга: ' + finishedSize(el.dataset.size);
     const range = $('input[data-k="sheetsPerSig"]');
     range.disabled = st.oneSig;
@@ -637,11 +649,12 @@
     const pages = plan.seq.filter((x) => x !== null).length;
     const stat = (n, t) => `<div class="stat"><b>${n}</b><span>${t}</span></div>`;
     const parts = [stat(pages, 'страниц книги'), '<div class="arrow">→</div>'];
-    parts.push(stat(plan.signatures.length, plural(plan.signatures.length, 'тетрадь', 'тетради', 'тетрадей')));
+    if (plan.punch) parts.push(stat(plan.leafCount, plural(plan.leafCount, 'листок', 'листка', 'листков')));
+    else parts.push(stat(plan.signatures.length, plural(plan.signatures.length, 'тетрадь', 'тетради', 'тетрадей')));
     parts.push(stat(plan.sheets.length, plural(plan.sheets.length, 'лист бумаги', 'листа бумаги', 'листов бумаги')));
     parts.push(stat(plan.blanks, plural(plan.blanks, 'пустая страница', 'пустые страницы', 'пустых страниц')));
     parts.push(stat(finishedSize(st.mode).replace(/ мм.*/, ''), 'размер книги, мм'));
-    parts.push(`<div class="print-hint">🖨️ <span>${printHint()}</span></div>`);
+    parts.push(`<div class="print-hint"><span>${printHint()}</span></div>`);
     el.innerHTML = parts.join('');
   }
 
@@ -698,8 +711,20 @@
       else s += `<div class="pg" style="${pos(it.rect)}">${pageImg(it.src)}<span class="num">${it.src + 1}</span></div>`;
       return s;
     }).join('');
+    if (plan.punch) {
+      const mm = C.MM;
+      const zones = layout.filter((it) => it.src !== null).map((it) => {
+        const c = it.slot.cell, w = Math.min(st.punchMargin * mm, c.w) * 0.8;
+        const z = { x: it.slot.spine === 'left' ? c.x : c.x + c.w - w, y: c.y, w, h: c.h };
+        return `<div class="hole-zone" style="${pos(z)}"></div>`;
+      }).join('');
+      return zones + items + '<div class="cut cut-v"></div>' + (st.mode === 'booklet4' ? '<div class="cut"></div>' : '');
+    }
     return items + '<div class="fold"></div>' + (st.mode === 'booklet4' ? '<div class="cut"></div>' : '');
   }
+
+  // Листки на листе дырокола: «листок 1 (стр. 1–2)»
+  const leafText = (lf) => (lf ? `листок ${lf.no} (стр. ${pairText(lf.pages)})` : 'пусто');
 
   const halvesOf = (sh) => sh.halves || [sh];
   // «16 и 1», а для маленькой книги по половинкам: «16 и 1 / пусто и 17»
@@ -721,6 +746,7 @@
     vSheet = clamp(vSheet, 0, n - 1);
     const sh = plan.sheets[vSheet];
     const { W, H } = plan.geo;
+    if (plan.punch) return punchViewer(sh, n);
     const half = st.mode === 'booklet4';
     const hs = halvesOf(sh);
     const sub = half
@@ -764,6 +790,50 @@
         <div class="v-info">
           <div class="v-card"><h4>Что на этом листе</h4>${what}</div>
           ${where}
+          <div class="v-card">
+            <h4>Порядок печати</h4>
+            <p class="hint">${st.duplex === 'manual'
+              ? 'Сначала печатаются все стороны A (файл «лицевые»), потом стопку переворачивают и печатают все B.'
+              : 'Принтер печатает A, затем на обороте того же листа B, и берёт следующий лист.'}</p>
+            <div class="ochips">${chips.join('')}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Пролистать листы — дырокол: на листе несколько листков, после разрезки они расходятся по своим стопкам
+  function punchViewer(sh, n) {
+    const { W, H } = plan.geo;
+    const sideIdx = vSheet * 2 + (vBack ? 1 : 0);
+    const chips = [];
+    for (let k = Math.max(0, sideIdx - 3); k <= Math.min(n * 2 - 1, sideIdx + 3); k++) {
+      const s = Math.floor(k / 2), b = k % 2;
+      chips.push(`<button class="ochip${k === sideIdx ? ' cur' : ''}" data-side="${k}"><span class="side side-${b ? 'B' : 'A'}">${b ? 'B' : 'A'}</span> лист ${s + 1}</button>`);
+    }
+    const names = st.mode === 'booklet4' ? ['⬉ левый верхний', '⬈ правый верхний', '⬋ левый нижний', '⬊ правый нижний'] : ['◧ левый', '◨ правый'];
+    const what = sh.leaves.map((lf, c) => `<p>${names[c]} кусок → <b>${leafText(lf)}</b>, стопка ${c + 1}</p>`).join('');
+    return `
+      <div class="viewer">
+        <div class="v-nav">
+          <button class="btn" data-v="prev" ${sideIdx === 0 ? 'disabled' : ''}>◀ Назад</button>
+          <div class="v-title"><b>Лист ${vSheet + 1} из ${n}</b><span>после разрезки — ${sh.leaves.filter(Boolean).length} ${plural(sh.leaves.filter(Boolean).length, 'листок', 'листка', 'листков')}</span></div>
+          <button class="btn" data-v="next" ${sideIdx === n * 2 - 1 ? 'disabled' : ''}>Вперёд ▶</button>
+        </div>
+        <div class="v-side" id="vSide">${sideTag()}</div>
+        <div class="v-stage" style="--ar:${(W / H).toFixed(4)}">
+          <div class="card3d${vBack ? ' flipped' : ''}" id="card" title="Нажмите, чтобы перевернуть">
+            <div class="face front"><div class="paper">${paperInner(sh.frontLayout)}</div></div>
+            <div class="face back"><div class="paper">${paperInner(sh.backLayout)}</div></div>
+          </div>
+        </div>
+        <div class="v-actions">
+          <button class="btn primary" data-v="flip">↻ Перевернуть лист</button>
+          <span class="hint">Клавиши: ← → — листать, пробел — перевернуть</span>
+        </div>
+        <label class="v-scrub"><span>Лист 1</span><input type="range" min="1" max="${n}" value="${vSheet + 1}" data-v="scrub"><span>${n}</span></label>
+        <div class="v-info">
+          <div class="v-card"><h4>Что на этом листе</h4>${what}
+            <p class="hint">Заштрихованная полоса — поле под дырокол. На обороте она с другой стороны, поэтому после переворота совпадает.</p></div>
           <div class="v-card">
             <h4>Порядок печати</h4>
             <p class="hint">${st.duplex === 'manual'
@@ -821,6 +891,20 @@
         : '<span class="side side-B">B</span> оборот этого же листа';
       return `<figure class="paper-wrap${portrait ? ' portrait' : ''}"><div class="paper" style="aspect-ratio:${W}/${H}">${paperInner(layout)}</div><figcaption>${cap}</figcaption></figure>`;
     };
+    if (plan.punch) {
+      const row = (sh) => `
+        <div class="sheet-row">
+          <div class="sheet-label"><b>Лист ${sh.globalNo}</b><small>метка L${sh.globalNo}/${sh.sheetsTotal}</small>
+            <div class="sheet-pages">${sh.leaves.map((lf) => (lf ? `листок ${lf.no}: ${pairText(lf.pages)}` : 'пусто')).join('<br>')}</div>
+          </div>
+          ${paper(sh.frontLayout, 'A')}
+          ${paper(sh.backLayout, 'B')}
+        </div>`;
+      const piles = st.mode === 'booklet4' ? 'четыре стопки: левую верхнюю, правую верхнюю, левую нижнюю, правую нижнюю' : 'две стопки: левую и правую';
+      const intro = `<p class="intro">Так листы выйдут из принтера. После печати разрежьте всю стопку по линиям разреза — получатся ${piles}.
+        Положите их друг на друга в этом порядке (первая — сверху): листки сразу пойдут по порядку. Пробейте дыроколом поле у корешка (заштриховано).</p>`;
+      return coverBlock() + intro + `<section class="sig">${plan.sheets.map(row).join('')}</section>`;
+    }
     const row = (sh) => {
       const label = st.mode === 'booklet4'
         ? halvesOf(sh).map((h, i) => (h ? `${i ? '⬇' : '⬆'} T${h.sig}·L${h.sheetInSig}` : `${i ? '⬇' : '⬆'} пусто`)).join('<br>')
@@ -865,6 +949,15 @@
       return `<div class="cov-panel" style="${pos(P)}"><div class="cov-in" style="${inner}">${pageImg(it.src)}</div></div>`;
     }).join('');
     const mm = (pt) => Math.round(pt / C.MM);
+    if (c.punch) {
+      return `
+      <section class="sig cover-sec">
+        <div class="sig-head"><div class="sig-tag">Обложка</div><span>отдельный лист ${c.paper}, печать с одной стороны · листок ${mm(c.bookW)} × ${mm(c.bookH)} мм</span></div>
+        <figure class="paper-wrap cover-wrap${c.PW < c.PH ? ' portrait' : ''}"><div class="paper" style="aspect-ratio:${c.PW}/${c.PH}">
+          ${items}<div class="cut cut-v"></div>${st.mode === 'booklet4' ? '<div class="cut"></div>' : ''}
+        </div><figcaption>перед · зад</figcaption></figure>
+      </section>`;
+    }
     const left = st.rtl ? 'перед' : 'зад', right = st.rtl ? 'зад' : 'перед';
     return `
       <section class="sig cover-sec">
@@ -919,6 +1012,7 @@
 
   // ---------- Как собрать ----------
   function buildView() {
+    if (plan.punch) return punchBuildView();
     const sigs = plan.signatures;
     const many = sigs.length > 1;
     const spine = st.rtl ? 'справа' : 'слева';
@@ -950,6 +1044,82 @@
         <ul>${sig.sheets.map((sh) => `<li>Лист ${sh.sheetInSig} <span>стр. ${pairText(sh.leaves[0])} и ${pairText(sh.leaves[1])}</span></li>`).join('')}</ul>
       </div>`).join('');
     return steps + coverBlock() + stack + `<h3 class="block-title">Схема каждой тетради</h3><div class="sig-cards">${cards}</div>`;
+  }
+
+  // Как собрать — дырокол: напечатать, разрезать стопку, сложить стопки по порядку, пробить, скрепить
+  function punchBuildView() {
+    const pic = punchPics();
+    const four = st.mode === 'booklet4';
+    const spine = st.rtl ? 'справа' : 'слева';
+    const li = (p, title, text) => `<li><figure class="pic">${p}</figure><div><b>${title}</b><span>${text}</span></div></li>`;
+    const N = plan.sheets.length;
+    const piles = plan.sheets[0].leaves.map((lf, c) => {
+      const nums = plan.sheets.map((sh) => sh.leaves[c]).filter(Boolean);
+      return nums.length ? `<div class="blk"><b>${c + 1}</b><span>листки ${nums[0].no}–${nums[nums.length - 1].no}</span></div>` : '';
+    }).join('');
+    return `
+      <ol class="steps">
+        ${li(pic.print, 'Скачайте PDF и напечатайте', printHint())}
+        ${li(pic.cut, four ? 'Разрежьте стопку на 4 части' : 'Разрежьте стопку пополам', `Не перекладывая листы, разрежьте всю стопку (${N} ${plural(N, 'лист', 'листа', 'листов')}) по засечкам — резаком или ножом по линейке. Получится ${four ? '4 стопки' : '2 стопки'}.`)}
+        ${li(pic.stack, 'Сложите стопки по порядку', `Стопку ${four ? 'левого верхнего куска' : 'левых половинок'} — сверху, под ней ${four ? 'правую верхнюю, затем левую нижнюю и правую нижнюю' : 'правую'}. Листки сразу идут по порядку: сверху листок 1 со страницей ${numOf(0) ?? 'пусто'}.`)}
+        ${li(pic.punch, 'Пробейте дыроколом', `Поле под дырокол — ${spine} у лицевой стороны листка (${st.punchMargin} мм). Пробивайте по 10–15 листков за раз, прижимая их к упору дырокола одинаково.`)}
+        ${li(pic.bind, 'Скрепите', 'Наденьте листки на кольца, диски (тетрадь на дисках) или пружину. Клей и нитки не нужны, листки можно вынимать и добавлять.')}
+        ${li(pic.cover, 'Обложка', plan.cover && plan.cover.items.length
+          ? `Файл «обложка» напечатайте на плотной бумаге ${plan.cover.paper} с одной стороны, разрежьте по засечкам и пробейте так же: перед — первым, зад — последним.`
+          : 'Положите сверху и снизу листки плотной бумаги или пластиковые обложки. Обложку из страниц манги можно выбрать в разделе «Обложка» слева.')}
+      </ol>` + coverBlock() + `
+      <h3 class="block-title">Стопки после разрезки — сверху вниз</h3>
+      <div class="stack">${piles}</div>`;
+  }
+
+  // Плоские схемы к шагам для дырокола. У манги корешок справа.
+  function punchPics() {
+    const rtl = st.rtl;
+    const four = st.mode === 'booklet4';
+    const rect = (x, y, w, h, cls = 'k-p') => `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5"/>`;
+    const text = (x, y, s, cls = 'k-t') => `<text class="${cls}" x="${x}" y="${y}" text-anchor="middle">${s}</text>`;
+    const line = (x1, y1, x2, y2, cls = 'k-fold') => `<line class="${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+    const arrow = (x1, y1, x2, y2) => {
+      const ang = Math.atan2(y2 - y1, x2 - x1), l = 7, s = 0.45;
+      return `<path class="k-ar" d="M${x1},${y1} L${x2},${y2}"/><path class="k-ah" d="M${x2},${y2} L${x2 - l * Math.cos(ang - s)},${y2 - l * Math.sin(ang - s)} L${x2 - l * Math.cos(ang + s)},${y2 - l * Math.sin(ang + s)}Z"/>`;
+    };
+    const svg = (body) => `<svg viewBox="0 0 200 120" aria-hidden="true">${body}</svg>`;
+    // Дырки вдоль корешка листка
+    const holes = (x, y, w, h, n = 4) => {
+      const hx = rtl ? x + w - 5 : x + 5;
+      return Array.from({ length: n }, (_, i) => `<circle class="k-hole" cx="${hx}" cy="${y + (h * (i + 0.5)) / n}" r="2"/>`).join('');
+    };
+    const leaf = (x, y, w, h, label, cls = 'k-p') => rect(x, y, w, h, cls) + holes(x, y, w, h) + (label ? text(x + w / 2, y + h / 2 + 5, label, 'k-num') : '');
+    const first = numOf(0) ?? '';
+    const n = (pos) => numOf(pos) ?? '';
+    const sh = plan.sheets[0];
+    const pics = {};
+    pics.print = four
+      ? svg(rect(66, 6, 68, 100) + line(100, 6, 100, 106, 'k-cut') + line(66, 56, 134, 56, 'k-cut')
+        + [0, 1, 2, 3].map((c) => text(83 + (c % 2) * 34, 36 + Math.floor(c / 2) * 50, n(sh.front[c]), 'k-num')).join('')
+        + text(100, 117, 'лист A4', 'k-cap'))
+      : svg(rect(10, 22, 120, 76) + line(70, 22, 70, 98, 'k-cut')
+        + text(40, 66, n(sh.front[0]), 'k-num') + text(100, 66, n(sh.front[1]), 'k-num')
+        + text(70, 112, 'лицо листа 1', 'k-cap') + text(165, 66, '✂', 'k-scis'));
+    pics.cut = four
+      ? svg(rect(14, 14, 34, 44) + rect(52, 14, 34, 44) + rect(14, 62, 34, 44) + rect(52, 62, 34, 44)
+        + [1, 2, 3, 4].map((k, i) => text(31 + (i % 2) * 38, 42 + Math.floor(i / 2) * 48, k, 'k-num')).join('')
+        + text(100, 64, '✂', 'k-scis') + text(150, 64, '4 стопки', 'k-cap'))
+      : svg(rect(14, 22, 56, 76) + rect(80, 22, 56, 76) + text(42, 66, '1', 'k-num') + text(108, 66, '2', 'k-num')
+        + text(75, 14, '✂', 'k-scis') + text(168, 64, '2 стопки', 'k-cap'));
+    pics.stack = svg(rect(110, 40, 56, 72, 'k-p k-back') + leaf(104, 34, 56, 72, first)
+      + rect(24, 50, 44, 58, 'k-p k-alt') + text(46, 84, four ? '2–4' : '2', 'k-num')
+      + rect(24, 8, 44, 38) + text(46, 32, '1', 'k-num') + arrow(74, 30, 98, 46) + arrow(74, 80, 98, 90)
+      + text(46, 118, 'стопки', 'k-cap'));
+    pics.punch = svg(rect(rtl ? 116 : 40, 20, 44, 84, 'k-p k-cov') + leaf(rtl ? 30 : 70, 26, 100, 72, '')
+      + text(rtl ? 138 : 62, 14, 'дырокол', 'k-cap'));
+    pics.bind = svg(leaf(56, 20, 92, 80, first) + Array.from({ length: 4 }, (_, i) => {
+      const cx = rtl ? 56 + 92 - 5 : 61, cy = 20 + (80 * (i + 0.5)) / 4;
+      return `<ellipse class="k-ring" cx="${cx}" cy="${cy}" rx="7" ry="5"/>`;
+    }).join(''));
+    pics.cover = svg(rect(20, 18, 70, 88, 'k-p k-cov') + holes(20, 18, 70, 88) + text(55, 66, 'перед', 'k-cap')
+      + rect(110, 18, 70, 88, 'k-p k-cov') + holes(110, 18, 70, 88) + text(145, 66, 'зад', 'k-cap'));
+    return pics;
   }
 
   // ---------- Картинки к шагам сборки ----------
@@ -1075,7 +1245,7 @@
       <div class="flipbook">
         <div class="v-nav">
           <button class="btn" data-b="left">◀ ${st.rtl ? 'Дальше' : 'Назад'}</button>
-          <div class="v-title"><b id="bTitle">${bookTitle(sp)}</b><span>Готовая книга после складывания и склейки</span></div>
+          <div class="v-title"><b id="bTitle">${bookTitle(sp)}</b><span>${plan.punch ? 'Готовая книга на кольцах или дисках' : 'Готовая книга после складывания и склейки'}</span></div>
           <button class="btn" data-b="right">${st.rtl ? 'Назад' : 'Дальше'} ▶</button>
         </div>
         <div class="book" id="book" style="--ar:${(ratio * 2).toFixed(4)}">
@@ -1226,6 +1396,7 @@
     if (raw[0] === 0xff && raw[1] === 0xd8 && raw[2] === 0xff) return { bytes: raw, mime: 'image/jpeg' };
     if (raw[0] === 0x89 && raw[1] === 0x50 && raw[2] === 0x4e && raw[3] === 0x47) return { bytes: raw, mime: 'image/png' };
     // webp, avif, bmp, gif — переводим в JPEG
+    L.debug('pdf', `${im.name}: внутри не JPEG/PNG (первые байты ${[...raw.slice(0, 12)].map((b) => b.toString(16).padStart(2, '0')).join(' ')}), перевожу в JPEG`);
     const bmp = await createImageBitmap(im.blob);
     const c = document.createElement('canvas');
     c.width = bmp.width;
@@ -1242,6 +1413,8 @@
   async function save() {
     if (!plan || plan.error) return;
     busy(true, 'Собираю PDF…', 0);
+    const t0 = Date.now();
+    L.info('pdf', `Собираю PDF «${bookTitleText()}»: ${files.length} файлов`, { настройки: st, листов: plan.sheets && plan.sheets.length, тетрадей: plan.signatures && plan.signatures.length });
     try {
       const data = [];
       for (const f of files) {
@@ -1253,6 +1426,7 @@
           data.push({ kind: 'pdf', bytes: f.file ? new Uint8Array(await f.file.arrayBuffer()) : f.bytes.slice() });
         }
       }
+      L.info('pdf', `Картинки подготовлены за ${Date.now() - t0} мс`);
       const res = await C.generate(PDFLib, data, meta, st, async (p) => {
         busy(true, `Собираю PDF… ${Math.round(p * 100)}%`, p);
         await new Promise((r) => setTimeout(r));
@@ -1272,9 +1446,10 @@
         setTimeout(() => download(res.cover, `${base} — обложка.pdf`), 1200);
         names.push('«обложка»');
       }
+      L.info('pdf', `Готово за ${((Date.now() - t0) / 1000).toFixed(1)} с: ${names.join(', ')}`, { основной: res.main.length, обороты: res.back && res.back.length, обложка: res.cover && res.cover.length });
       toast(`Готово! Скачано: ${names.join(', ')}.`);
     } catch (e) {
-      console.error(e);
+      L.error('pdf', 'Не получилось собрать PDF', e);
       toast('Не получилось собрать PDF: ' + e.message);
     } finally {
       busy(false);
@@ -1301,6 +1476,7 @@
 
   let toastTimer = 0;
   function toast(msg) {
+    L.info('подсказка', msg);
     const t = $('#toast');
     t.textContent = msg;
     t.hidden = false;
@@ -1371,7 +1547,7 @@
 
   function initThemes() {
     const sel = $('#theme');
-    const opts = [['auto', '🎨 Как в системе'], ['light', 'Светлая'], ['dark', 'Тёмная'], ...Object.keys(PALETTES).map((k) => [k, k])];
+    const opts = [['auto', 'Как в системе'], ['light', 'Светлая'], ['dark', 'Тёмная'], ...Object.keys(PALETTES).map((k) => [k, k])];
     sel.innerHTML = opts.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
     const saved = store.get('booklet.theme', 'auto') || 'auto';
     sel.value = opts.some(([v]) => v === saved) ? saved : 'auto';
