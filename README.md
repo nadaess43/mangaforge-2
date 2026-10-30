@@ -86,4 +86,4 @@ booklet/
 
 ## License
 
-[MIT](LICENSE): free to use, modify and distribute with attribution.
+[GPL-3.0](LICENSE): free to use, modify and distribute; derivative works must stay open source under the same license.
