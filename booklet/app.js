@@ -386,7 +386,7 @@
     $('#fileList').innerHTML = files.map((f, i) => `
       <li>
         <span class="ftype">${f.kind === 'pdf' ? 'PDF' : '🖼'}</span>
-        <div class="fi"><div class="fn" title="${esc(f.path || f.name)}">${esc(f.name)}</div><div class="fm">${keyText(f)}${f.numPages} стр. · ${fmt(f.size)}</div></div>
+        <div class="fi"><div class="fn" translate="no" title="${esc(f.path || f.name)}">${esc(f.name)}</div><div class="fm">${keyText(f)}${f.numPages} стр. · ${fmt(f.size)}</div></div>
         <button data-act="up" data-id="${f.id}" title="Выше" ${i === 0 ? 'disabled' : ''}>↑</button>
         <button data-act="down" data-id="${f.id}" title="Ниже" ${i === files.length - 1 ? 'disabled' : ''}>↓</button>
         <button data-act="del" data-id="${f.id}" title="Убрать">✕</button>
@@ -412,7 +412,7 @@
         for (let l = 0; l < 4; l++) p.drawRectangle({ x: 50, y: 160 - l * 26, width: 320 - (l % 2) * 90, height: 9, color: rgb(0.85, 0.85, 0.85) });
       }
       const bytes = await doc.save();
-      await openPdf({ name: 'Пример (40 страниц).pdf', size: bytes.length, file: null, bytes }, bytes.slice());
+      await openPdf({ name: I18N.t('Пример (40 страниц).pdf'), size: bytes.length, file: null, bytes }, bytes.slice());
       rebuildMeta();
     } finally {
       busy(false);
@@ -423,14 +423,14 @@
   // ---------- Имя файла ----------
   // Подсказка названия по именам файлов и папок (как в MangaForge): «Наруто Том 1-3 Гл. 5-10»
   function suggestTitle() {
-    if (!files.length) return 'Книга';
+    if (!files.length) return I18N.t('Книга');
     if (files.length === 1 && files[0].kind === 'pdf') return files[0].name.replace(/\.pdf$/i, '');
     const names = files.map((f) => f.name.replace(/\.pdf$/i, ''));
     const clean = names
       .map((n) => n.replace(/(vol|v|том|глава|гл|ch|chapter|glava)\.?\s*\d+/gi, '').replace(/\d+/g, '').replace(/_/g, ' ').replace(/^[\s\-.]+|[\s\-.]+$/g, ''))
       .filter(Boolean);
     let base = clean.length ? commonPrefix(clean).replace(/[\s\-.]+$/, '').trim() : '';
-    if (base.length < 3) base = clean[0] || 'Манга';
+    if (base.length < 3) base = clean[0] || I18N.t('Манга');
     const vols = [], chs = [];
     for (const n of names) {
       const v = n.match(/(?:vol|v|том)\.?\s*(\d+)/i);
@@ -441,8 +441,8 @@
     }
     const span = (a) => { const lo = Math.min(...a), hi = Math.max(...a); return lo === hi ? `${lo}` : `${lo}-${hi}`; };
     const parts = [base];
-    if (vols.length) parts.push('Том ' + span(vols));
-    if (chs.length) parts.push('Гл. ' + span(chs));
+    if (vols.length) parts.push(I18N.t('Том') + ' ' + span(vols));
+    if (chs.length) parts.push(I18N.t('Гл.') + ' ' + span(chs));
     return parts.join(' ');
   }
 
@@ -1432,18 +1432,18 @@
         await new Promise((r) => setTimeout(r));
       });
       busy(true, 'Сохраняю…', 1);
-      const base = bookTitleText().replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'Книга';
+      const base = bookTitleText().replace(/[\\/:*?"<>|]+/g, ' ').trim() || I18N.t('Книга');
       const names = [];
       if (res.back) {
-        download(res.main, `${base} — лицевые.pdf`);
-        setTimeout(() => download(res.back, `${base} — обороты.pdf`), 600);
+        download(res.main, I18N.t('{0} — лицевые.pdf', base));
+        setTimeout(() => download(res.back, I18N.t('{0} — обороты.pdf', base)), 600);
         names.push('«лицевые»', '«обороты»');
       } else {
-        download(res.main, `${base} — для печати.pdf`);
+        download(res.main, I18N.t('{0} — для печати.pdf', base));
         names.push('«для печати»');
       }
       if (res.cover) {
-        setTimeout(() => download(res.cover, `${base} — обложка.pdf`), 1200);
+        setTimeout(() => download(res.cover, I18N.t('{0} — обложка.pdf', base)), 1200);
         names.push('«обложка»');
       }
       L.info('pdf', `Готово за ${((Date.now() - t0) / 1000).toFixed(1)} с: ${names.join(', ')}`, { основной: res.main.length, обороты: res.back && res.back.length, обложка: res.cover && res.cover.length });
@@ -1491,68 +1491,38 @@
     store.set('booklet.zoom', v);
   }
 
-  // ---------- Темы (палитры из MangaForge) ----------
-  const PALETTES = {
-    'Catppuccin Mocha': { bg: '#1e1e2e', panel: '#313244', text: '#cdd6f4', accent: '#cba6f7', input: '#181825', border: '#cba6f7' },
-    'Catppuccin Latte': { bg: '#eff1f5', panel: '#e6e9ef', text: '#4c4f69', accent: '#ea76cb', input: '#ffffff', border: '#ea76cb' },
-    'Dracula': { bg: '#282a36', panel: '#44475a', text: '#f8f8f2', accent: '#ff79c6', input: '#282a36', border: '#ff79c6' },
-    'Nord': { bg: '#2e3440', panel: '#3b4252', text: '#d8dee9', accent: '#88c0d0', input: '#2e3440', border: '#81a1c1' },
-    'Gruvbox Dark': { bg: '#282828', panel: '#3c3836', text: '#ebdbb2', accent: '#fe8019', input: '#1d2021', border: '#d65d0e' },
-    'Tokyo Night': { bg: '#1a1b26', panel: '#24283b', text: '#c0caf5', accent: '#7aa2f7', input: '#16161e', border: '#bb9af7' },
-    'Kanagawa': { bg: '#1f1f28', panel: '#2a2a37', text: '#dcd7ba', accent: '#957fb8', input: '#16161d', border: '#7e9cd8' },
-    'Sakura': { bg: '#fff0f5', panel: '#ffe4e1', text: '#5c2a38', accent: '#ff69b4', input: '#fffaf0', border: '#ff1493' },
-    'Matcha': { bg: '#f1f8e9', panel: '#dcedc8', text: '#33691e', accent: '#7cb342', input: '#ffffff', border: '#558b2f' },
-    'Oceanic Next': { bg: '#1b2b34', panel: '#343d46', text: '#d8dee9', accent: '#6699cc', input: '#1b2b34', border: '#5fb3b3' },
-    'Monokai Pro': { bg: '#2d2a2e', panel: '#403e41', text: '#fcfcfa', accent: '#ffd866', input: '#221f22', border: '#ff6188' },
-    'Rose Pine': { bg: '#191724', panel: '#1f1d2e', text: '#e0def4', accent: '#ebbcba', input: '#191724', border: '#c4a7e7' },
-    "Synthwave '84": { bg: '#262335', panel: '#241b2f', text: '#ff7edb', accent: '#36f9f6', input: '#262335', border: '#fe4450' },
-    'Obsidian': { bg: '#0f0f0f', panel: '#1c1c1c', text: '#aeaeae', accent: '#a673e8', input: '#000000', border: '#555555' },
-    'Deep Blue': { bg: '#001e3c', panel: '#0a1929', text: '#ffffff', accent: '#3399ff', input: '#001e3c', border: '#66b2ff' },
-    'Lavender': { bg: '#f3e5f5', panel: '#e1bee7', text: '#4a148c', accent: '#ab47bc', input: '#ffffff', border: '#8e24aa' },
-    'Mint': { bg: '#e0f2f1', panel: '#b2dfdb', text: '#004d40', accent: '#26a69a', input: '#ffffff', border: '#00897b' },
-    'Solarized Dark': { bg: '#002b36', panel: '#073642', text: '#839496', accent: '#b58900', input: '#002b36', border: '#2aa198' },
-    'Solarized Light': { bg: '#fdf6e3', panel: '#eee8d5', text: '#657b83', accent: '#cb4b16', input: '#ffffff', border: '#268bd2' },
-    'Cyberpunk Edge': { bg: '#050505', panel: '#111111', text: '#fcee0a', accent: '#00f0ff', input: '#000000', border: '#ff003c' },
-  };
-  const PALETTE_VARS = ['--bg', '--surface', '--surface-2', '--border', '--text', '--muted', '--accent', '--accent-soft', '--accent-text', '--slot', '--paper-shadow', 'color-scheme'];
+  // ---------- Оформление: дизайны целиком + светлая/тёмная ----------
+  // Каждый дизайн — свой файл designs/<id>.css, правила включаются атрибутом html[data-design].
+  // «Классика» живёт в style.css и работает без атрибута. Новый дизайн: файл в designs/, <link> в index.html и строка здесь.
+  const DESIGNS = [
+    ['mat', 'Стол переплётчика'],
+    ['print', 'Печатный цех'],
+    ['strict', 'Строгий'],
+    ['classic', 'Классика'],
+  ];
+  const MODES = [['auto', 'Как в системе'], ['light', 'Светлая'], ['dark', 'Тёмная']];
 
-  function lum(hex) {
-    const n = parseInt(hex.slice(1), 16);
-    const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
-    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
-  }
-
-  function applyTheme(name) {
+  function applyDesign(design, mode) {
     const root = document.documentElement;
-    for (const v of PALETTE_VARS) root.style.removeProperty(v);
-    delete root.dataset.theme;
-    if (name === 'light' || name === 'dark') { root.dataset.theme = name; return; }
-    const t = PALETTES[name];
-    if (!t) return;
-    const dark = lum(t.bg) < 0.3;
-    const set = (k, v) => root.style.setProperty(k, v);
-    set('--bg', t.bg);
-    set('--surface', t.panel);
-    set('--surface-2', t.input);
-    set('--border', `color-mix(in srgb, ${t.border} 35%, ${t.panel})`);
-    set('--text', t.text);
-    set('--muted', `color-mix(in srgb, ${t.text} 62%, ${t.bg})`);
-    set('--accent', t.accent);
-    set('--accent-soft', `color-mix(in srgb, ${t.accent} 20%, ${t.panel})`);
-    set('--accent-text', lum(t.accent) > 0.4 ? '#111111' : '#ffffff');
-    set('--slot', `color-mix(in srgb, ${t.accent} 55%, transparent)`);
-    if (dark) set('--paper-shadow', '0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.45)');
-    set('color-scheme', dark ? 'dark' : 'light');
+    if (design === 'classic') delete root.dataset.design; else root.dataset.design = design;
+    if (mode === 'light' || mode === 'dark') root.dataset.theme = mode; else delete root.dataset.theme;
   }
 
   function initThemes() {
-    const sel = $('#theme');
-    const opts = [['auto', 'Как в системе'], ['light', 'Светлая'], ['dark', 'Тёмная'], ...Object.keys(PALETTES).map((k) => [k, k])];
-    sel.innerHTML = opts.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
-    const saved = store.get('booklet.theme', 'auto') || 'auto';
-    sel.value = opts.some(([v]) => v === saved) ? saved : 'auto';
-    applyTheme(sel.value);
-    sel.addEventListener('change', () => { applyTheme(sel.value); store.set('booklet.theme', sel.value); });
+    const sel = $('#theme'), modeSel = $('#themeMode');
+    const fill = (el, list) => { el.innerHTML = list.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join(''); };
+    fill(sel, DESIGNS);
+    fill(modeSel, MODES);
+    // Раньше здесь хранилась палитра или «light/dark» — переносим режим, дизайн берём по умолчанию
+    const old = store.get('booklet.theme', 'auto');
+    const design = store.get('booklet.design', DESIGNS[0][0]);
+    const mode = store.get('booklet.mode', old === 'light' || old === 'dark' ? old : 'auto');
+    sel.value = DESIGNS.some(([v]) => v === design) ? design : DESIGNS[0][0];
+    modeSel.value = MODES.some(([v]) => v === mode) ? mode : 'auto';
+    applyDesign(sel.value, modeSel.value);
+    const save = () => { applyDesign(sel.value, modeSel.value); store.set('booklet.design', sel.value); store.set('booklet.mode', modeSel.value); };
+    sel.addEventListener('change', save);
+    modeSel.addEventListener('change', save);
   }
 
   // Для окна скачивания (настольная версия)

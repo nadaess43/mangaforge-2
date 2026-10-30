@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('mfDownload', {
 // Журнал: файл в «Документы\MangaForge\Логи» и живая лента для окна «Журнал»
 contextBridge.exposeInMainWorld('mfLog', {
   write: (level, source, msg, data) => ipcRenderer.send('log:write', level, source, msg, data),
+  setLang: (lang) => ipcRenderer.send('app:lang', lang),
   recent: () => ipcRenderer.invoke('log:recent'),
   openFile: () => ipcRenderer.invoke('log:openFile'),
   openFolder: () => ipcRenderer.invoke('log:openFolder'),

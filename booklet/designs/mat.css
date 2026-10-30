@@ -1,0 +1,250 @@
+/* Дизайн «mat» (Стол переплётчика). Все правила действуют только при html[data-design="mat"]. */
+/* Оформление «стол переплётчика»: спокойная бумажная панель слева и зелёный коврик для резки справа,
+   на котором лежат листы. Коврик — единственный яркий элемент, всё остальное тихое. */
+:root[data-design="mat"] {
+  --bg: #eceeeb;
+  --surface: #f6f7f5;
+  --surface-2: #e8ebe8;
+  --border: #d6dbd8;
+  --text: #2c3130;
+  --muted: #6f7774;
+  --accent: #2f5b4f;
+  --accent-soft: #e1ebe6;
+  --accent-text: #ffffff;
+  --side-a: #3a6ea5;
+  --side-b: #c4862c;
+  --danger: #c2412d;
+  --paper: #ffffff;
+  --paper-shadow: 0 1px 1px rgba(10,30,25,.18), 0 10px 22px -8px rgba(10,30,25,.45);
+  --slot: rgba(47,91,79,.35);
+  --radius: 6px;
+  --sheet-w: 380px;
+  /* Коврик и бумажные заметки на нём */
+  --mat: #2f5b4f;
+  --mat-line: rgba(255,255,255,.07);
+  --mat-line-strong: rgba(255,255,255,.13);
+  --mat-text: #eef3f0;
+  --mat-muted: #b4c6bf;
+  --ink: #2c3130;
+  --ink-muted: #6f7774;
+  --f-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --f-title: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-design="mat"]:not([data-theme="light"]) {
+    --bg: #1a1e1d;
+    --surface: #212625;
+    --surface-2: #2a302e;
+    --border: #39403e;
+    --text: #e3e8e5;
+    --muted: #98a29e;
+    --accent: #6fae98;
+    --accent-soft: #2b3a35;
+    --accent-text: #10201b;
+    --side-a: #6c9fd6;
+    --side-b: #dba650;
+    --danger: #e0715c;
+    --paper-shadow: 0 1px 1px rgba(0,0,0,.5), 0 12px 24px -8px rgba(0,0,0,.7);
+    --slot: rgba(111,174,152,.45);
+    --mat: #21403a;
+    --mat-text: #e6eeea;
+    --mat-muted: #9fb5ad;
+    --ink: #e3e8e5;
+    --ink-muted: #98a29e;
+    color-scheme: dark;
+  }
+}
+:root[data-design="mat"][data-theme="dark"] {
+  --bg: #1a1e1d;
+  --surface: #212625;
+  --surface-2: #2a302e;
+  --border: #39403e;
+  --text: #e3e8e5;
+  --muted: #98a29e;
+  --accent: #6fae98;
+  --accent-soft: #2b3a35;
+  --accent-text: #10201b;
+  --side-a: #6c9fd6;
+  --side-b: #dba650;
+  --danger: #e0715c;
+  --paper-shadow: 0 1px 1px rgba(0,0,0,.5), 0 12px 24px -8px rgba(0,0,0,.7);
+  --slot: rgba(111,174,152,.45);
+  --mat: #21403a;
+  --mat-text: #e6eeea;
+  --mat-muted: #9fb5ad;
+  --ink: #e3e8e5;
+  --ink-muted: #98a29e;
+  color-scheme: dark;
+}
+
+
+/* ================= Стол переплётчика: внешний вид поверх базовой разметки ================= */
+[data-design="mat"] body { font-family: var(--f-ui); }
+[data-design="mat"] .stat b,
+[data-design="mat"] .lbl output,
+[data-design="mat"] .sheet-pages,
+[data-design="mat"] .sig-head span,
+[data-design="mat"] .files .fm,
+[data-design="mat"] .num,
+[data-design="mat"] .v-scrub span,
+[data-design="mat"] .mode-txt small.size { font-variant-numeric: tabular-nums; }
+
+/* Шапка и панель — тихая бумага */
+[data-design="mat"] .top { background: var(--surface); border-bottom: 1px solid var(--border); }
+[data-design="mat"] .brand svg { width: 28px; height: 28px; }
+[data-design="mat"] .brand .b1 { fill: var(--mat); opacity: 1; }
+[data-design="mat"] .brand .b2 { fill: var(--mat); opacity: .62; }
+[data-design="mat"] .brand h1 { font-family: var(--f-title); font-weight: 600; font-size: 18px; letter-spacing: .005em; }
+[data-design="mat"] .btn { border-radius: 6px; transition: background .12s, border-color .12s; }
+[data-design="mat"] .btn:hover:not(:disabled) { border-color: var(--muted); background: var(--surface-2); }
+[data-design="mat"] .btn.primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); filter: brightness(1.1); }
+[data-design="mat"] :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+[data-design="mat"] .panel { background: var(--surface); }
+[data-design="mat"] .sec { border-bottom: none; padding: 2px 0 14px; }
+[data-design="mat"] .sec + .sec { border-top: 1px solid var(--border); }
+[data-design="mat"] .sec > summary { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; color: var(--text); padding: 12px 0 6px; }
+[data-design="mat"] .sec > summary::after { color: var(--muted); font-size: 12px; }
+[data-design="mat"] .lbl { font-weight: 500; }
+[data-design="mat"] .lbl output { color: var(--muted); font-weight: 500; }
+[data-design="mat"] input[type="text"],
+[data-design="mat"] input[type="url"],
+[data-design="mat"] input[type="number"],
+[data-design="mat"] select { border-radius: 6px; background: var(--surface); }
+[data-design="mat"] input[type="text"]:focus,
+[data-design="mat"] input[type="url"]:focus,
+[data-design="mat"] input[type="number"]:focus,
+[data-design="mat"] select:focus { border-color: var(--accent); }
+[data-design="mat"] .seg span { border-radius: 5px; }
+[data-design="mat"] .seg input:checked + span { color: var(--text); font-weight: 600; }
+[data-design="mat"] .chip { background: var(--surface); }
+[data-design="mat"] .chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+[data-design="mat"] .mode { border-width: 1px; border-radius: 8px; }
+[data-design="mat"] .mode:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+[data-design="mat"] .mode-txt b { font-weight: 600; }
+[data-design="mat"] .mode-txt small.size { color: var(--muted); font-weight: 500; }
+[data-design="mat"] .files li { background: transparent; border-radius: 6px; }
+[data-design="mat"] .files li:hover { background: var(--surface-2); }
+[data-design="mat"] .files .ftype,
+[data-design="mat"] .files .fkey { color: var(--accent); }
+
+/* Рабочая область — коврик для резки: сетка 1 см и линия каждые 5 см */
+[data-design="mat"] .main {
+  --text: var(--mat-text); --muted: var(--mat-muted);
+  color: var(--text);
+  background-color: var(--mat);
+  background-image:
+    linear-gradient(var(--mat-line-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--mat-line-strong) 1px, transparent 1px),
+    linear-gradient(var(--mat-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--mat-line) 1px, transparent 1px);
+  background-size: 160px 160px, 160px 160px, 32px 32px, 32px 32px;
+  background-position: -1px -1px;
+}
+[data-design="mat"] .main .btn { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.28); color: var(--text); }
+[data-design="mat"] .main .btn:hover:not(:disabled) { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.5); }
+[data-design="mat"] .main .btn.primary { background: var(--paper); border-color: var(--paper); color: #24463d; font-weight: 600; }
+[data-design="mat"] .main .btn.primary:hover:not(:disabled) { background: var(--paper); filter: none; box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
+[data-design="mat"] .main input[type="range"] { accent-color: var(--paper); }
+[data-design="mat"] .tabs-bar { background: var(--mat); }
+
+/* Сводка прямо на коврике: цифры светлым, без рамки */
+[data-design="mat"] .summary { background: transparent; border: none; padding: 4px 2px 12px; }
+[data-design="mat"] .stat b { font-size: 22px; font-weight: 600; }
+[data-design="mat"] .arrow { color: var(--muted); }
+[data-design="mat"] .summary .print-hint { border-top-color: rgba(255,255,255,.14); }
+
+/* Вкладки: светлый текст, выбранная — белая плашка, как карточка на коврике */
+[data-design="mat"] .tabs { background: rgba(0,0,0,.16); }
+[data-design="mat"] .tabs button { color: var(--muted); }
+[data-design="mat"] .tabs button:hover { color: var(--text); }
+[data-design="mat"] .tabs button[aria-selected="true"] { background: var(--paper); color: #24463d; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+
+/* Бумажные заметки на коврике: свой «чернильный» текст */
+[data-design="mat"] .drop,
+[data-design="mat"] .how li,
+[data-design="mat"] .steps li,
+[data-design="mat"] .v-card,
+[data-design="mat"] .sig-card,
+[data-design="mat"] .intro,
+[data-design="mat"] .stack .blk,
+[data-design="mat"] .ochip,
+[data-design="mat"] .empty .hint {
+  --text: var(--ink); --muted: var(--ink-muted);
+  color: var(--text);
+}
+[data-design="mat"] .drop,
+[data-design="mat"] .how li,
+[data-design="mat"] .steps li,
+[data-design="mat"] .v-card,
+[data-design="mat"] .sig-card,
+[data-design="mat"] .intro,
+[data-design="mat"] .stack .blk {
+  background: var(--surface); border: none; border-radius: 3px; box-shadow: var(--paper-shadow);
+}
+[data-design="mat"] .ochip { background: var(--surface-2); border-color: var(--border); border-radius: 5px; }
+[data-design="mat"] .ochip.cur { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* Пустой экран: чистый лист на коврике, на него и кладут файлы */
+[data-design="mat"] .empty { max-width: 900px; margin: 32px auto; }
+[data-design="mat"] .drop { padding: 48px 32px 40px; outline: 2px dashed var(--border); outline-offset: -14px; }
+[data-design="mat"] .drop svg path { fill: var(--accent-soft); stroke: var(--accent); }
+[data-design="mat"] .drop h2 { font-family: var(--f-title); font-weight: 600; font-size: 26px; }
+[data-design="mat"] .how { gap: 16px; }
+[data-design="mat"] .how li { padding: 16px; }
+[data-design="mat"] .how b::before { color: var(--accent); }
+[data-design="mat"] .how .l1,
+[data-design="mat"] .how .t1 { stroke: var(--accent); fill: var(--accent); }
+[data-design="mat"] .how .l1 { fill: none; }
+
+/* Листы и подписи на коврике */
+[data-design="mat"] .sig-tag { background: var(--paper); color: #24463d; border-radius: 4px; }
+[data-design="mat"] .sheet-label small,
+[data-design="mat"] figcaption { color: var(--muted); }
+[data-design="mat"] .intro { padding: 12px 16px; }
+[data-design="mat"] .num { background: rgba(28,40,36,.82); box-shadow: 0 0 0 2px rgba(255,255,255,.9); }
+[data-design="mat"] .paper { border-radius: 2px; }
+[data-design="mat"] .cov-whole { outline-color: rgba(0,0,0,.3); }
+
+/* Как собрать: каждый шаг — листок на коврике; номер шага обычной цифрой */
+[data-design="mat"] .steps { gap: 12px; }
+[data-design="mat"] .steps li { padding: 14px 16px 14px 56px; }
+[data-design="mat"] .steps li::before { background: var(--accent); color: var(--accent-text); font-weight: 600; font-size: 13px; }
+[data-design="mat"] .steps li > div > b { font-weight: 600; font-size: 15px; }
+[data-design="mat"] h3.block-title { color: var(--text); font-weight: 600; }
+[data-design="mat"] .stack .blk { border-top: 3px solid var(--accent); }
+[data-design="mat"] .pic .k-p.k-cov { fill: var(--accent-soft); stroke: var(--accent); }
+[data-design="mat"] .pic .k-ar { stroke: var(--accent); }
+[data-design="mat"] .pic .k-ah { fill: var(--accent); }
+[data-design="mat"] .pic .k-ring { stroke: var(--accent); }
+[data-design="mat"] .sig-card svg .sheet.outer,
+[data-design="mat"] .sig-card svg .sheet.cur,
+[data-design="mat"] .v-card svg .sheet.cur { stroke: var(--accent); }
+[data-design="mat"] .v-card svg text.cur { fill: var(--accent); }
+
+/* Листание книги и просмотр листов */
+[data-design="mat"] .v-title b { font-weight: 600; }
+
+/* Окна поверх — бумага с мягкой тенью */
+[data-design="mat"] .dl,
+[data-design="mat"] .logdlg { border-radius: 10px; box-shadow: 0 24px 60px -12px rgba(0,0,0,.45); }
+[data-design="mat"] .dl::backdrop,
+[data-design="mat"] .logdlg::backdrop { background: rgba(18,32,28,.5); }
+[data-design="mat"] .dl-pill,
+[data-design="mat"] .busy-box { border-radius: 10px; }
+[data-design="mat"] .toast { border-radius: 8px; }
+[data-design="mat"] .dropveil { background: color-mix(in srgb, var(--mat) 35%, transparent); border-color: var(--paper); }
+[data-design="mat"] .dropveil div { color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-design="mat"] *,
+[data-design="mat"] *::before,
+[data-design="mat"] *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* Кнопки на бумажном листе — обычные, не «коврические» */
+[data-design="mat"] .drop .btn { background: var(--surface-2); border-color: var(--border); color: var(--ink); }
+[data-design="mat"] .drop .btn:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); }
+[data-design="mat"] .drop .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+[data-design="mat"] .drop .btn.primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.1); box-shadow: none; }

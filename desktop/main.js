@@ -9,11 +9,20 @@ const { Downloader } = require('./engine');
 const { updateScripts, scriptsPresent, lastCheck } = require('./engine/scripts');
 const xquery = require('./engine/xquery');
 const { Logger } = require('./logger');
+const I18N = require('../booklet/i18n.js');
+
+// Язык: выбранный в программе (settings.json) или язык системы. Папки по умолчанию называются по языку системы.
+const settingsPath = () => path.join(app.getPath('userData'), 'settings.json');
+const systemRu = /^ru/i.test(Intl.DateTimeFormat().resolvedOptions().locale || '');
+let savedLang = null;
+try { savedLang = JSON.parse(fs.readFileSync(settingsPath(), 'utf8')).lang; } catch { /* первый запуск */ }
+I18N.setLang(savedLang || (systemRu ? 'ru' : 'en'));
 
 let downloader;
 
 // Журнал: «Документы\MangaForge\Логи», рядом с папкой манги — его легко найти и переслать
-const logger = new Logger(path.join(app.getPath('documents'), 'MangaForge', 'Логи'));
+const logger = new Logger(path.join(app.getPath('documents'), 'MangaForge', systemRu ? 'Логи' : 'Logs'));
+logger.translate = (s) => I18N.tr(s);
 // Движок пишет (сообщение, данные, уровень); по умолчанию — подробности уровня DEBUG
 const engineLog = (msg, data, level = 'DEBUG') => logger.write(level, 'движок', msg, data);
 xquery.setLogger((msg, data) => logger.warn('xpath', msg, data));
@@ -132,7 +141,7 @@ app.whenReady().then(async () => {
   // Папка для скачанной манги: выбранная человеком или «Документы\MangaForge\Манга»
   const settingsFile = path.join(app.getPath('userData'), 'settings.json');
   const readSettings = () => { try { return JSON.parse(fs.readFileSync(settingsFile, 'utf8')); } catch { return {}; } };
-  const downloadDir = () => readSettings().downloadDir || path.join(app.getPath('documents'), 'MangaForge', 'Манга');
+  const downloadDir = () => readSettings().downloadDir || path.join(app.getPath('documents'), 'MangaForge', systemRu ? 'Манга' : 'Manga');
   logger.info('старт', 'Папка загрузок: ' + downloadDir());
   // Путь внутри папки загрузок; выйти за её пределы нельзя
   const inside = (rel) => {
@@ -146,7 +155,7 @@ app.whenReady().then(async () => {
   handle('dl:folder', () => downloadDir(), { level: 'DEBUG' });
   handle('dl:pickFolder', async (e) => {
     const r = await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender), {
-      title: 'Куда скачивать мангу', defaultPath: downloadDir(), properties: ['openDirectory', 'createDirectory'],
+      title: I18N.t('Куда скачивать мангу'), defaultPath: downloadDir(), properties: ['openDirectory', 'createDirectory'],
     });
     if (r.canceled || !r.filePaths[0]) return null;
     fs.writeFileSync(settingsFile, JSON.stringify({ ...readSettings(), downloadDir: r.filePaths[0] }));
@@ -174,6 +183,13 @@ app.whenReady().then(async () => {
 
   // Журнал для страницы: запись, последние строки, открыть файл или папку
   ipcMain.on('log:write', (e, level, source, msg, data) => logger.write(level, source, msg, data));
+  // Язык интерфейса: журнал и диалоги переходят на него, выбор запоминается
+  ipcMain.on('app:lang', (e, lang) => {
+    if (lang === I18N.lang && lang === readSettings().lang) return;
+    I18N.setLang(lang);
+    try { fs.writeFileSync(settingsFile, JSON.stringify({ ...readSettings(), lang })); } catch { /* не страшно */ }
+    logger.info('старт', 'Язык интерфейса: ' + lang);
+  });
   ipcMain.handle('log:recent', () => logger.lines);
   ipcMain.handle('log:openFile', () => { logger.open(); return logger.flush().then(() => shell.openPath(logger.file)); });
   ipcMain.handle('log:openFolder', () => shell.openPath(logger.dir));

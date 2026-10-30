@@ -21,6 +21,15 @@ function hideSecrets(v, depth = 0) {
   return o;
 }
 
+// Ключи объектов в данных журнала тоже переводим: { не_скачались: … } → { not downloaded: … }
+function translateKeys(v, T, depth = 0) {
+  if (!v || typeof v !== 'object' || v instanceof Error || Buffer.isBuffer(v) || v instanceof Uint8Array || depth > 3) return v;
+  if (Array.isArray(v)) return v.map((x) => translateKeys(x, T, depth + 1));
+  const o = {};
+  for (const [k, x] of Object.entries(v)) o[T(k.replace(/_/g, ' '))] = translateKeys(x, T, depth + 1);
+  return o;
+}
+
 function format(value) {
   if (value === undefined) return '';
   if (value instanceof Error) return value.stack || `${value.name}: ${value.message}`;
@@ -41,6 +50,7 @@ class Logger {
     this.listeners = new Set();
     this.file = '';
     this.stream = null;
+    this.translate = (s) => s; // перевод записей на язык интерфейса (задаёт main.js)
     try { fs.mkdirSync(dir, { recursive: true }); } catch { /* пишем только в память */ }
   }
 
@@ -58,10 +68,11 @@ class Logger {
   write(level, source, message, data) {
     if (!LEVELS.includes(level)) level = 'INFO';
     const d = new Date();
-    let text = format(message);
-    const extra = format(data);
+    const T = this.translate;
+    let text = T(format(message));
+    const extra = format(translateKeys(data, T));
     if (extra) text += (text ? ' ' : '') + extra;
-    const entry = { t: d.getTime(), level, source: String(source || 'app'), text };
+    const entry = { t: d.getTime(), level, source: T(String(source || 'app')), text };
     const line = `${day(d)} ${time(d)} ${level.padEnd(5)} [${entry.source}] ${text.replace(/\n/g, '\n    ')}\n`;
     this.open();
     if (this.stream) this.stream.write(line);

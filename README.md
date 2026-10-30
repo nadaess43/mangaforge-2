@@ -20,6 +20,7 @@ Your files never leave your computer.
   - *Regular book:* 2 pages per side of the sheet. A4 sheets give an A5 book.
   - *Small book:* 4 pages per side. Each A4 sheet is cut in half into two signatures, giving an A6 book.
 - **Two ways to bind.** Fold into signatures and sew or glue, or use a hole punch: sheets are cut into separate leaves with a blank margin at the spine, then bound with rings, discs or a coil, no glue needed. Pages are laid out so that after cutting the whole stack you just put the piles on top of each other and everything is in order.
+- **English and Russian interface.** Picked from the system language, switchable in the header. Logs, file names and chapter folders follow the chosen language.
 - **Right-to-left manga.** Page order and the spine on the right, just like the original.
 - **Double-page spreads.** Wide pages are split into two halves that always land on facing pages of the book.
 - **Covers handled the way scanlation groups release them.** Front and back covers are detected automatically from file names (cover, обложка, 000…) and can be picked by hand. The cover can be:

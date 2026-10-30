@@ -116,13 +116,14 @@
       }
       chapters = info.chapters.map((c, i) => {
         const k = parseKey(c.name, c.link);
-        const label = k.vol !== null && k.ch !== null ? `Том ${k.vol} Глава ${k.ch}` : k.ch !== null ? `Глава ${k.ch}` : `Глава ${i + 1}`;
+        // Имя папки главы — на языке интерфейса: «Том 1 Глава 2» или «Vol 1 Ch 2»
+        const label = k.vol !== null && k.ch !== null ? I18N.t('Том {0} Глава {1}', k.vol, k.ch) : I18N.t('Глава {0}', k.ch !== null ? k.ch : i + 1);
         // Папка главы: номер для правильного порядка + название с сайта
         const rest = c.name.replace(/^(?:том|vol\.?)\s*\d+\s*(?:глава|ch\.?)\s*\d+(?:[.,]\d+)?\s*[-–:.]?\s*/i, '');
         return { ...c, ...k, label, folder: safe(rest && rest !== c.name ? `${label} ${rest}` : label), on: true, saved: false };
       });
       $('#dlTitle').textContent = info.title;
-      $('#dlMeta').textContent = [info.site, info.authors, `${chapters.length} глав`].filter(Boolean).join(' · ');
+      $('#dlMeta').textContent = [info.site, info.authors, I18N.t('{0} глав', chapters.length)].filter(Boolean).join(' · ');
       $('#dlInfo').hidden = false;
       loadCover();
       await markSaved();
@@ -168,7 +169,7 @@
     let prevVol;
     chapters.forEach((c, i) => {
       if (hasVols && c.vol !== prevVol) { html += `<div class="dl-vol">${c.vol === null ? 'Без тома' : 'Том ' + c.vol}</div>`; prevVol = c.vol; }
-      html += `<label class="dl-ch"><input type="checkbox" data-i="${i}" ${c.on ? 'checked' : ''}><span>${esc(c.name || c.label)}</span>${c.saved ? '<span class="done">✓ уже скачана</span>' : ''}</label>`;
+      html += `<label class="dl-ch"><input type="checkbox" data-i="${i}" ${c.on ? 'checked' : ''}><span translate="no">${esc(c.name || c.label)}</span>${c.saved ? '<span class="done">✓ уже скачана</span>' : ''}</label>`;
     });
     $('#dlList').innerHTML = html;
     sync();
@@ -279,7 +280,7 @@
             if (got[k]) {
               got[k].name = String(k + 1).padStart(width, '0') + '.' + extOf(got[k].mime, pages[k]);
               bytes += got[k].bytes.length;
-              try { await api.save(`${rel}/${got[k].name}`, got[k].bytes); } catch (e) { L.error('загрузка', `Не записалось на диск: ${rel}/${got[k].name}`, msgOf(e)); failed.push(`запись на диск: ${msgOf(e)}`); cancel = true; }
+              try { await api.save(`${rel}/${got[k].name}`, got[k].bytes); } catch (e) { L.error('загрузка', `Не записалось на диск: ${rel}/${got[k].name}`, msgOf(e)); failed.push(I18N.t('запись на диск: {0}', msgOf(e))); cancel = true; }
             }
             done++;
             status(`Глава ${ci + 1} из ${list.length}: страница ${done} из ${pages.length}`, (ci + done / pages.length) / list.length);
@@ -290,7 +291,7 @@
         const ok = got.filter(Boolean).length;
         L.info('загрузка', `[${ci + 1}/${list.length}] ${c.name}: ${ok} из ${pages.length} страниц за ${((Date.now() - tc) / 1000).toFixed(1)} с`, { форматы: [...new Set(got.filter(Boolean).map((r) => r.mime))] });
         if (got.length && got.every(Boolean)) c.saved = true;
-        else if (!cancel) failed.push(`${c.name || c.label} (не все страницы)`);
+        else if (!cancel) failed.push(I18N.t('{0} (не все страницы)', c.name || c.label));
       }
     } finally {
       running = false;
@@ -300,7 +301,9 @@
     }
     const wasMin = minimized;
     L[failed.length ? 'warn' : 'info']('загрузка', `${cancel ? 'Остановлено' : 'Закончено'} за ${Math.round((Date.now() - t0) / 1000)} с: ${items.length} картинок, скачано ${(bytes / 2 ** 20).toFixed(1)} МБ, ошибок ${failed.length}`, failed.length ? { не_скачались: failed } : undefined);
-    const note = failed.length ? ` Не скачались: ${failed.slice(0, 3).join('; ')}${failed.length > 3 ? ` и ещё ${failed.length - 3}` : ''}. Подробности — в «Журнале».` : '';
+    // Части сообщения переводятся по отдельности: внутри — названия глав с сайта
+    const more = failed.length > 3 ? ' ' + I18N.t('и ещё {0}', failed.length - 3) : '';
+    const note = failed.length ? ' ' + I18N.t('Не скачались: {0}. Подробности — в «Журнале».', failed.slice(0, 3).join('; ') + more) : '';
     const where = `Сохранено в папку «${root}».`;
     if (!items.length) { finish(cancel ? 'Остановлено.' : 'Ничего не скачалось. Возможно, сайт не отдаёт картинки.' + note, wasMin); return; }
     if ($('#dlAdd').checked) {

@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MangaForge 2 — печать книг</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="designs/mat.css">
+<link rel="stylesheet" href="designs/print.css">
+<link rel="stylesheet" href="designs/strict.css">
 <script src="lib/pdf.min.js"></script>
 <!-- Воркер подключён как обычный скрипт: так pdf.js работает и при открытии файла с диска -->
 <script src="lib/pdf.worker.min.js"></script>
@@ -25,7 +28,9 @@
   <div class="top-actions">
     <button class="btn" id="btnOpen">Открыть PDF</button>
     <button class="btn" id="btnLog" hidden>Журнал</button>
-    <select id="theme" class="theme-sel" title="Оформление" aria-label="Оформление"></select>
+    <select id="theme" class="theme-sel" title="Дизайн" aria-label="Дизайн"></select>
+    <select id="themeMode" class="theme-sel" title="Светлая или тёмная" aria-label="Светлая или тёмная"></select>
+    <select id="lang" class="theme-sel" title="Язык" aria-label="Язык"><option value="ru" translate="no">Русский</option><option value="en" translate="no">English</option></select>
     <button class="btn primary" id="btnSave" disabled>Скачать PDF для печати</button>
   </div>
   <input type="file" id="fileInput" accept="application/pdf,.pdf,.cbz,.zip" multiple hidden>
@@ -311,13 +316,13 @@
   <p class="hint" id="dlHint"></p>
   <div class="dl-folder">
     <span>Папка:</span>
-    <code id="dlFolder" title="Каждая манга — в своей папке по названию, внутри папки глав"></code>
+    <code id="dlFolder" translate="no" title="Каждая манга — в своей папке по названию, внутри папки глав"></code>
     <button class="btn small" id="dlPick">Изменить…</button>
     <button class="btn small" id="dlOpen">Открыть</button>
   </div>
   <div class="dl-info" id="dlInfo" hidden>
     <img id="dlCover" alt="">
-    <div><b id="dlTitle"></b><span id="dlMeta"></span></div>
+    <div><b id="dlTitle" translate="no"></b><span id="dlMeta" translate="no"></span></div>
   </div>
   <div class="dl-tools" id="dlTools" hidden>
     <button class="btn small" data-sel="all">Все</button>
@@ -351,15 +356,33 @@
     <input id="logSearch" type="text" placeholder="Поиск" spellcheck="false">
     <span class="hint" id="logCount"></span>
   </div>
-  <div class="log-list" id="logList"></div>
+  <div class="log-list" id="logList" translate="no"></div>
   <div class="log-foot">
-    <code id="logPath"></code>
+    <code id="logPath" translate="no"></code>
     <button class="btn small" id="logCopy">Копировать</button>
     <button class="btn small" id="logFile">Открыть файл</button>
     <button class="btn small" id="logFolder">Папка</button>
   </div>
 </dialog>
 
+<script src="i18n.js"></script>
+<script>
+  // Язык: выбранный раньше или язык системы; переводчик следит за всем, что появляется на странице
+  (function () {
+    let lang = null;
+    try { lang = JSON.parse(localStorage.getItem('booklet.lang')); } catch { /* нет хранилища */ }
+    if (lang !== 'ru' && lang !== 'en') lang = /^ru/i.test(navigator.language) ? 'ru' : 'en';
+    I18N.setLang(lang);
+    I18N.watch(document);
+    if (window.mfLog && window.mfLog.setLang) window.mfLog.setLang(lang);
+    const sel = document.getElementById('lang');
+    sel.value = lang;
+    sel.addEventListener('change', () => {
+      try { localStorage.setItem('booklet.lang', JSON.stringify(sel.value)); } catch { /* нет хранилища */ }
+      location.reload();
+    });
+  })();
+</script>
 <script src="log.js"></script>
 <script src="app.js"></script>
 <script src="downloader.js"></script>

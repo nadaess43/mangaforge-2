@@ -1,0 +1,196 @@
+/* Дизайн «print» (Печатный цех). Все правила действуют только при html[data-design="print"]. */
+/* Печатный цех, спокойная версия: светлая бумага, графитовая краска, красный — только для мелких меток.
+   Мягкие линии вместо чёрных рамок, небольшое скругление, обычный регистр. */
+:root[data-design="print"] {
+  --bg: #ecebe7;
+  --surface: #f8f7f4;
+  --surface-2: #efede8;
+  --border: #d9d5cd;
+  --text: #2d2b28;
+  --muted: #75706a;
+  --accent: #3a3734;
+  --accent-soft: #e9e5de;
+  --accent-text: #ffffff;
+  --mark: #b9473a;
+  --side-a: #3f7d74;
+  --side-b: #bf7b2e;
+  --danger: #b9473a;
+  --paper: #ffffff;
+  --field: #ffffff;
+  --paper-shadow: 0 0 0 1px rgba(45,43,40,.08), 0 2px 6px rgba(45,43,40,.10);
+  --slot: rgba(185,71,58,.30);
+  --radius: 4px;
+  --sheet-w: 380px;
+  --f-head: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+  --f-text: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-design="print"]:not([data-theme="light"]) {
+    --bg: #1d1c1a;
+    --surface: #252321;
+    --surface-2: #2d2b28;
+    --border: #3d3a36;
+    --text: #e4e0d8;
+    --muted: #9d978e;
+    --accent: #e4e0d8;
+    --accent-soft: #34312d;
+    --accent-text: #1d1c1a;
+    --mark: #d9705f;
+    --side-a: #6aaea4;
+    --side-b: #d9a05a;
+    --danger: #d9705f;
+    --paper-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 3px 10px rgba(0,0,0,.4);
+    --field: #2f2d2a;
+    --slot: rgba(217,112,95,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-design="print"][data-theme="dark"] {
+  --bg: #1d1c1a;
+  --surface: #252321;
+  --surface-2: #2d2b28;
+  --border: #3d3a36;
+  --text: #e4e0d8;
+  --muted: #9d978e;
+  --accent: #e4e0d8;
+  --accent-soft: #34312d;
+  --accent-text: #1d1c1a;
+  --mark: #d9705f;
+  --side-a: #6aaea4;
+  --side-b: #d9a05a;
+  --danger: #d9705f;
+  --paper-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 3px 10px rgba(0,0,0,.4);
+  --field: #2f2d2a;
+  --slot: rgba(217,112,95,.4);
+  color-scheme: dark;
+}
+
+[data-design="print"] body { font-family: var(--f-text); }
+[data-design="print"] .brand h1,
+[data-design="print"] .drop h2,
+[data-design="print"] .sec > summary,
+[data-design="print"] .tabs button,
+[data-design="print"] .btn,
+[data-design="print"] .v-title b,
+[data-design="print"] .steps li > div > b,
+[data-design="print"] h3.block-title,
+[data-design="print"] .sig-card h4,
+[data-design="print"] .v-card h4,
+[data-design="print"] .mode-txt b,
+[data-design="print"] .dl-head b { font-family: var(--f-head); }
+[data-design="print"] .stat b,
+[data-design="print"] .lbl output,
+[data-design="print"] .sheet-pages,
+[data-design="print"] .num { font-variant-numeric: tabular-nums; }
+
+/* Шапка */
+[data-design="print"] .top { background: var(--surface); border-bottom: 1px solid var(--border); }
+[data-design="print"] .brand .b1 { fill: var(--text); opacity: .9; }
+[data-design="print"] .brand .b2 { fill: var(--text); opacity: .55; }
+[data-design="print"] .brand h1 { font-weight: 600; font-size: 18px; }
+
+/* Кнопки */
+[data-design="print"] .btn { border-radius: 4px; border-color: var(--border); background: var(--surface); transition: background .12s, border-color .12s; }
+[data-design="print"] .btn:hover:not(:disabled) { border-color: var(--muted); background: var(--surface-2); }
+[data-design="print"] .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 500; }
+[data-design="print"] .btn.primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.15); }
+[data-design="print"] :focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
+
+/* Панель */
+[data-design="print"] .panel { background: var(--surface); }
+[data-design="print"] .sec > summary { text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 500; color: var(--text); padding: 12px 0 6px; }
+[data-design="print"] .sec > summary::after { color: var(--muted); }
+[data-design="print"] .lbl { font-weight: 500; }
+[data-design="print"] .lbl output { color: var(--muted); }
+[data-design="print"] input[type="text"],
+[data-design="print"] input[type="url"],
+[data-design="print"] input[type="number"],
+[data-design="print"] select { border-radius: 4px; background: var(--field); border-color: var(--border); }
+[data-design="print"] input[type="text"]:focus,
+[data-design="print"] input[type="url"]:focus,
+[data-design="print"] input[type="number"]:focus,
+[data-design="print"] select:focus { border-color: var(--muted); }
+[data-design="print"] input[type="range"],
+[data-design="print"] .check input { accent-color: var(--text); }
+[data-design="print"] .seg { background: var(--surface-2); border-radius: 5px; }
+[data-design="print"] .seg span { border-radius: 3px; }
+[data-design="print"] .seg input:checked + span { background: var(--field); color: var(--text); font-weight: 500; box-shadow: 0 0 0 1px var(--border); }
+[data-design="print"] .chip { border-radius: 4px; background: var(--field); }
+[data-design="print"] .chip.on { border-color: var(--muted); color: var(--text); background: var(--surface-2); }
+[data-design="print"] .mode { border-width: 1px; border-radius: 5px; }
+[data-design="print"] .mode:has(input:checked) { border-color: var(--muted); background: var(--field); box-shadow: inset 3px 0 0 var(--mark); }
+[data-design="print"] .mode-txt b { font-weight: 500; font-size: 15px; }
+[data-design="print"] .mode-txt small.size { color: var(--muted); font-weight: 500; }
+[data-design="print"] .mode-ico path.cut { stroke: var(--mark); }
+[data-design="print"] .files li { background: transparent; border-radius: 4px; }
+[data-design="print"] .files li:hover { background: var(--surface-2); }
+[data-design="print"] .files .ftype,
+[data-design="print"] .files .fkey { color: var(--mark); }
+
+/* Пустой экран: лист с тонкими метками обреза */
+[data-design="print"] .drop {
+  border: none; border-radius: 2px; background-color: var(--paper); box-shadow: var(--paper-shadow);
+  --cm: #b8b2a8;
+  background-image:
+    linear-gradient(var(--cm), var(--cm)), linear-gradient(var(--cm), var(--cm)),
+    linear-gradient(var(--cm), var(--cm)), linear-gradient(var(--cm), var(--cm)),
+    linear-gradient(var(--cm), var(--cm)), linear-gradient(var(--cm), var(--cm)),
+    linear-gradient(var(--cm), var(--cm)), linear-gradient(var(--cm), var(--cm));
+  background-size: 16px 1px, 1px 16px, 16px 1px, 1px 16px, 16px 1px, 1px 16px, 16px 1px, 1px 16px;
+  background-position: 12px 20px, 20px 12px, calc(100% - 12px) 20px, calc(100% - 20px) 12px,
+    12px calc(100% - 20px), 20px calc(100% - 12px), calc(100% - 12px) calc(100% - 20px), calc(100% - 20px) calc(100% - 12px);
+  background-repeat: no-repeat;
+  color: #2d2b28;
+}
+[data-design="print"] .drop svg path { fill: #f1eee8; stroke: #2d2b28; }
+[data-design="print"] .drop h2 { font-weight: 500; font-size: 26px; }
+[data-design="print"] .drop p { color: #75706a; }
+[data-design="print"] .drop .btn { background: #fff; border-color: #d9d5cd; color: #2d2b28; }
+[data-design="print"] .drop .btn.primary { background: #3a3734; border-color: #3a3734; color: #fff; }
+[data-design="print"] .how li { border-radius: 2px; border-color: var(--border); background: var(--surface); }
+[data-design="print"] .how b::before { color: var(--mark); }
+[data-design="print"] .how .l1 { stroke: var(--text); } [data-design="print"] .how .l2 { stroke: var(--mark); } [data-design="print"] .how .l3 { stroke: var(--muted); }
+[data-design="print"] .how .t1 { fill: var(--text); opacity: .85; } [data-design="print"] .how .t2 { fill: var(--mark); opacity: .85; } [data-design="print"] .how .t3 { fill: var(--muted); opacity: .85; }
+
+/* Сводка и вкладки */
+[data-design="print"] .summary { border-radius: 4px; background: var(--surface); }
+[data-design="print"] .stat b { font-family: var(--f-head); font-weight: 500; font-size: 22px; }
+[data-design="print"] .arrow { color: var(--muted); }
+[data-design="print"] .tabs { background: transparent; padding: 0; gap: 4px; border-bottom: 1px solid var(--border); border-radius: 0; }
+[data-design="print"] .tabs button { border-radius: 0; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+[data-design="print"] .tabs button[aria-selected="true"] { background: transparent; box-shadow: none; color: var(--text); border-bottom-color: var(--mark); }
+
+/* Листы, тетради, сборка */
+[data-design="print"] .sig-tag { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); font-weight: 500; }
+[data-design="print"] .intro { background: var(--surface); border-left: 3px solid var(--mark); border-radius: 0 4px 4px 0; }
+[data-design="print"] .num { background: rgba(45,43,40,.85); }
+[data-design="print"] .paper { border-radius: 1px; }
+[data-design="print"] .steps li,
+[data-design="print"] .sig-card,
+[data-design="print"] .v-card,
+[data-design="print"] .stack .blk { border-radius: 4px; background: var(--surface); }
+[data-design="print"] .steps li::before { background: transparent; color: var(--mark); border: 1.5px solid var(--mark); font-family: var(--f-head); font-weight: 500; }
+[data-design="print"] .stack .blk { border-top: 3px solid var(--mark); }
+[data-design="print"] .pic .k-ar { stroke: var(--text); }
+[data-design="print"] .pic .k-ah { fill: var(--text); }
+[data-design="print"] .pic .k-p.k-cov { fill: var(--surface-2); stroke: var(--muted); }
+[data-design="print"] .pic .k-ring { stroke: var(--text); }
+[data-design="print"] .sig-card svg .sheet.outer,
+[data-design="print"] .sig-card svg .sheet.cur,
+[data-design="print"] .v-card svg .sheet.cur { stroke: var(--mark); }
+[data-design="print"] .v-card svg text.cur { fill: var(--mark); }
+[data-design="print"] .ochip.cur { border-color: var(--muted); box-shadow: inset 0 -2px 0 var(--mark); }
+
+/* Окна поверх */
+[data-design="print"] .dl,
+[data-design="print"] .logdlg { border-radius: 6px; box-shadow: 0 18px 48px -12px rgba(0,0,0,.35); }
+[data-design="print"] .dl-pill,
+[data-design="print"] .busy-box,
+[data-design="print"] .toast { border-radius: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-design="print"] *,
+[data-design="print"] *::before,
+[data-design="print"] *::after { transition-duration: .01ms !important; }
+}

@@ -120,7 +120,7 @@ function createHttp({ fetchImpl, jar = new CookieJar(), log = () => {}, timeout 
       document.bytes = buf;
       document.text = /^(image|video|audio)\//.test(state.MimeType) ? '' : decodeBody(buf, ct);
       const final = res.url && res.url !== target ? ` (итоговый адрес ${res.url})` : '';
-      const line = `HTTP ${method} ${target} → ${res.status}${res.statusText ? ' ' + res.statusText : ''},${state.MimeType || 'без типа'}, ${buf.length} байт, ${Date.now() - t0} мс${final}`;
+      const line = `HTTP ${method} ${target} → ${res.status}${res.statusText ? ' ' + res.statusText : ''}, ${state.MimeType || 'без типа'}, ${buf.length} байт, ${Date.now() - t0} мс${final}`;
       if (res.status >= 400 || !buf.length) {
         // Ответ с ошибкой: что отправили, что пришло и начало тела — по нему видно капчу, «доступ запрещён» и т. п.
         const head = {};
