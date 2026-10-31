@@ -1,12 +1,14 @@
 {
   "name": "mangaforge2",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MangaForge 2 — печать манги тетрадями, со встроенным загрузчиком на скриптах FMD",
   "main": "main.js",
   "license": "GPL-3.0",
+  "author": "nadaess",
   "private": true,
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --win nsis zip"
   },
   "dependencies": {
     "css-select": "^7.0.0",
@@ -16,6 +18,47 @@
     "wasmoon": "^1.16.0"
   },
   "devDependencies": {
-    "electron": "^45.1.0"
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "io.github.nadaess43.mangaforge2",
+    "productName": "MangaForge 2",
+    "copyright": "GPL-3.0",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "logger.js",
+      "engine/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../booklet",
+        "to": "booklet",
+        "filter": [
+          "index.html",
+          "*.js",
+          "*.css",
+          "designs/**/*",
+          "lib/**/*"
+        ]
+      }
+    ],
+    "win": { "artifactName": "MangaForge-2-${version}-portable.${ext}",
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "MangaForge-2-Setup-${version}.${ext}"
+    }
   }
 }

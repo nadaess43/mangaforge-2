@@ -50,7 +50,14 @@ Your files never leave your computer.
 
 ### Desktop version (download by link)
 
-Requires [Node.js](https://nodejs.org) 20 or newer.
+Windows: open [Releases](https://github.com/nadaess43/mangaforge-2/releases/latest) and download one of these files:
+
+- `MangaForge-2-Setup-x.y.z.exe` is the installer. Run it, and the app appears in the Start menu and on the desktop.
+- `MangaForge-2-x.y.z-portable.zip` needs no installation. Unpack it anywhere and run `MangaForge 2.exe`.
+
+The app is not signed, so on first launch Windows may show "Windows protected your PC". Click "More info", then "Run anyway". This only happens once.
+
+To run it from source instead, you need [Node.js](https://nodejs.org) 20 or newer:
 
 ```
 cd desktop
@@ -58,10 +65,12 @@ npm install
 npm start
 ```
 
-The same app opens as a window, with an extra «⇣ Скачать по ссылке» (Download by link) button in the files panel.
-Downloads go to `DocumentsMangaForgeМанга<title><volume and chapter>`; the folder can be changed in the download window.
+`npm run dist` builds the installer and the zip into `desktop\dist`.
 
-The «Журнал» (Log) button, or Ctrl+Shift+L, shows everything the app does: every request to the site, script calls, errors with details. The same log is saved to `DocumentsMangaForgeЛоги<date>.log`. If something goes wrong, attach this file to the bug report. Passwords and cookies are not written to the log.
+The same app opens as a window, with an extra «⇣ Скачать по ссылке» (Download by link) button in the files panel.
+Downloads go to `Documents\MangaForge\Manga\<title>\<volume and chapter>`; the folder can be changed in the download window.
+
+The «Журнал» (Log) button, or Ctrl+Shift+L, shows everything the app does: every request to the site, script calls, errors with details. The same log is saved to `Documents\MangaForge\Logs\<date>.log`. If something goes wrong, attach this file to the bug report. Passwords and cookies are not written to the log.
 
 Tip: before a big print run, print 1–2 sheets and check that the backs line up with the fronts.
 

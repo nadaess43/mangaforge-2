@@ -9,7 +9,9 @@ const { Downloader } = require('./engine');
 const { updateScripts, scriptsPresent, lastCheck } = require('./engine/scripts');
 const xquery = require('./engine/xquery');
 const { Logger } = require('./logger');
-const I18N = require('../booklet/i18n.js');
+// В установленной программе страница лежит в resources/booklet, при запуске из исходников — рядом с desktop/.
+const BOOKLET = app.isPackaged ? path.join(process.resourcesPath, 'booklet') : path.join(__dirname, '..', 'booklet');
+const I18N = require(path.join(BOOKLET, 'i18n.js'));
 
 // Язык: выбранный в программе (settings.json) или язык системы. Папки по умолчанию называются по языку системы.
 const settingsPath = () => path.join(app.getPath('userData'), 'settings.json');
@@ -62,7 +64,7 @@ function createWindow() {
   });
   win.on('unresponsive', () => logger.warn('окно', 'Окно не отвечает'));
   win.on('responsive', () => logger.info('окно', 'Окно снова отвечает'));
-  win.loadFile(path.join(__dirname, '..', 'booklet', 'index.html'));
+  win.loadFile(path.join(BOOKLET, 'index.html'));
   return win;
 }
 
